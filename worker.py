@@ -1215,9 +1215,9 @@ def _font(size, bold=False):
     from PIL import ImageFont
 
     names = (("/System/Library/Fonts/Supplemental/Arial Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-              "C:/Windows/Fonts/arialbd.ttf") if bold else
+              "arialbd.ttf") if bold else
              ("/System/Library/Fonts/Supplemental/Arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-              "C:/Windows/Fonts/arial.ttf"))
+              "arial.ttf"))
     for path in names + ("/System/Library/Fonts/Helvetica.ttc",):
         try:
             return ImageFont.truetype(path, size)
