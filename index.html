@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en" data-fused-theme="shell">
+<head>
+<meta charset="utf-8" />
+<meta name="fused-app" />
+<meta name="fused-api-version" content="1" />
+<meta name="fused-app-id" content="sat-desk-e2311bf3" />
+<title>Sat Desk</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --desk: #121316; --side: #17191d; --text: #e6e1d6; --muted: #9a958a; --line: #2c3038;
+    --paper: #1f1e1b; --ink: #ebe5d8; --ink-soft: #b5ae9f; --red: #e0574b; --red-soft: rgba(224, 87, 75, .14);
+    --blue: #8fb1e8; --amber: #d9a441; --ok: #5aa469;
+    --chip: rgba(255, 255, 255, .06); --hover: rgba(255, 255, 255, .05);
+    --shadow: 0 1px 0 rgba(0, 0, 0, .45), 0 14px 34px rgba(0, 0, 0, .38);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+    --map-bg: #0d0e10; --fp: #ffd34d;
+    --accent: var(--red); --before: var(--blue); --after: var(--red);
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --desk: #ebe7de; --side: #f5f2ea; --text: #2a2824; --muted: #7a7469; --line: #ddd6c7;
+    --paper: #fcfaf4; --ink: #2a2824; --ink-soft: #5d584f; --red: #c8312b; --red-soft: rgba(200, 49, 43, .09);
+    --blue: #2d4f8a; --amber: #b7791f; --ok: #3f8a4f;
+    --chip: rgba(40, 35, 25, .06); --hover: rgba(40, 35, 25, .05);
+    --shadow: 0 1px 0 rgba(0, 0, 0, .05), 0 12px 30px rgba(70, 55, 30, .13);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .15);
+    --map-bg: #d9d3c6;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; }
+  button, input, select, textarea { font: inherit; color: inherit; margin: 0; }
+  button { background: none; border: 0; padding: 0; cursor: pointer; }
+  ::placeholder { color: var(--muted); opacity: 1; }
+  input, select, textarea, progress { accent-color: var(--accent, currentColor); }
+  img, svg, video, canvas { display: block; max-width: 100%; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { font: 13.5px/1.45 var(--sans); color: var(--text); background: var(--desk); overflow: hidden; }
+  .scroll { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  .scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  .muted { color: var(--muted); }
+
+  #placeholder { display: none; height: 100%; place-items: center; text-align: center; color: var(--muted); }
+  html.preview #placeholder { display: grid; }
+  html.preview #app { display: none; }
+  #placeholder b { display: block; font: 700 24px/1.2 var(--serif); color: var(--text); margin-bottom: 4px; }
+
+  #app { display: grid; grid-template-columns: 300px minmax(0, 1fr); height: 100vh; }
+  #side { background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; min-width: 0; z-index: 2; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 14px 14px 10px; }
+  .brand .mark { width: 30px; height: 30px; flex: none; }
+  .brand .bt { flex: 1; min-width: 0; }
+  .brand b { display: block; font-size: 14px; font-weight: 600; }
+  .brand .bt span { display: block; font-size: 11.5px; line-height: 1.2; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .acct { position: relative; width: 28px; height: 28px; border-radius: 50%; background: var(--chip); font-size: 12px; font-weight: 700; color: var(--ink-soft); flex: none; display: grid; place-items: center; text-transform: uppercase; }
+  .acct:hover { color: var(--text); background: var(--hover); }
+  .acct .dot { position: absolute; right: 0; bottom: 0; box-shadow: 0 0 0 2px var(--side); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); }
+  .dot.warn { background: var(--red); }
+  #engine { flex: none; }
+  #engine button { flex: none; padding: 3px 6px; font-size: 11.5px; }
+  #engine[aria-busy="true"] { opacity: .6; pointer-events: none; }
+
+  .seg { display: flex; gap: 2px; background: var(--chip); padding: 2px; border-radius: 8px; min-width: 0; }
+  .seg button { flex: 1; min-width: 0; padding: 4px 10px; border-radius: 6px; font-size: 12px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg button:hover { color: var(--text); }
+  .seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--paper); color: var(--text); font-weight: 600; box-shadow: var(--shadow-sm); }
+  .tabs { margin: 0 12px 4px; }
+
+  .panes { flex: 1; overflow-y: auto; min-height: 0; padding: 4px 14px 16px; }
+  .side-h { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 16px 0 8px; display: flex; justify-content: space-between; align-items: center; }
+  .row { display: flex; align-items: center; gap: 10px; min-height: 32px; }
+  .row .rl { flex: 1; min-width: 0; color: var(--ink-soft); }
+  .row .rl.strong { color: var(--text); font-weight: 600; }
+  .numbox { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px 0 4px; border-radius: 6px; border: 1px solid var(--line); background: var(--paper); cursor: ns-resize; }
+  .numbox:focus-within { outline: 2px solid var(--red); outline-offset: 1px; }
+  .numbox input { width: 34px; border: 0; background: none; text-align: right; font-variant-numeric: tabular-nums; padding: 0; outline: none; cursor: ns-resize; -moz-appearance: textfield; appearance: textfield; }
+  .numbox input::-webkit-outer-spin-button, .numbox input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .numbox span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  select, input[type="text"], input[type="search"], input[type="date"] {
+    height: 28px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--paper); color: var(--text); min-width: 0;
+  }
+  select { padding-right: 4px; }
+  input[type="text"], input[type="search"] { width: 100%; }
+  input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+  .switch { width: 30px; height: 18px; border-radius: 9px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 2px rgba(0, 0, 0, .3); transition: transform .15s; }
+  .switch[aria-checked="true"] { background: var(--red); }
+  .switch[aria-checked="true"]::after { transform: translateX(12px); }
+  .tb-btn { height: 28px; min-width: 28px; padding: 0 9px; border-radius: 6px; color: var(--ink-soft); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+  .tb-btn:hover { background: var(--hover); color: var(--text); }
+  .tb-btn:disabled { opacity: .4; cursor: default; background: none; }
+  .btn { height: 34px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; background: var(--red); color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn:hover { filter: brightness(1.07); }
+  .btn:disabled { opacity: .5; cursor: default; filter: none; }
+  .btn.wide { width: 100%; }
+
+  .search { position: relative; margin-top: 8px; }
+  .search svg { position: absolute; left: 9px; top: 8px; width: 14px; height: 14px; color: var(--muted); pointer-events: none; }
+  .search input { height: 32px; padding-left: 30px; background: var(--paper); }
+  .dropdown { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); z-index: 20; overflow: hidden; }
+  .dropdown button { display: block; width: 100%; text-align: left; padding: 7px 10px; }
+  .dropdown button + button { border-top: 1px solid var(--line); }
+  .dropdown button:hover, .dropdown button.on { background: var(--hover); }
+  .dropdown .n { font-weight: 600; }
+  .dropdown .d { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .examples { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 10px; background: var(--chip); font-size: 11.5px; color: var(--ink-soft); }
+  .chip:hover { color: var(--text); background: var(--red-soft); }
+
+  .layer { display: block; padding: 9px 10px 9px 12px; border-radius: 8px; margin-bottom: 4px; cursor: pointer; border: 1px solid transparent; position: relative; }
+  .layer:hover { background: var(--hover); }
+  .layer.on { background: var(--paper); border-color: var(--line); box-shadow: var(--shadow-sm); }
+  .layer.on::before { content: ""; position: absolute; left: -1px; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--red); }
+  .layer input { position: absolute; opacity: 0; pointer-events: none; }
+  .layer .n { font-weight: 600; }
+  .layer .r { color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
+  .layer .w { color: var(--muted); font-size: 11.5px; margin-top: 3px; }
+  .grad { height: 8px; border-radius: 3px; margin-top: 7px; }
+  .gradlab { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 3px; gap: 8px; }
+
+  .form { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px 10px; align-items: center; padding-top: 12px; }
+  .form .fl { color: var(--ink-soft); font-size: 12.5px; }
+  .form .full { grid-column: 1 / -1; }
+  .form .note { color: var(--muted); font-size: 11.5px; line-height: 1.35; margin-top: -4px; min-width: 0; }
+  .form .area { display: flex; align-items: center; gap: 4px; min-height: 24px; }
+  .form .area span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .form .sep { grid-column: 1 / -1; height: 1px; background: var(--line); margin: 2px 0; }
+  .tb-btn.sm { height: 24px; padding: 0 8px; font-size: 11.5px; border: 1px solid var(--line); background: var(--paper); box-shadow: var(--shadow-sm); flex: none; }
+  .tb-btn.sm:hover { background: var(--side); color: var(--text); }
+  .pathbox { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .pathbox .tb-btn.sm { height: 28px; }
+  .path { flex: 1; min-width: 0; font: 11.5px/28px var(--mono); color: var(--ink-soft); height: 28px; padding: 0 8px; border-radius: 6px; background: var(--chip); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  .checks { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; margin-top: -4px; }
+  .checks label { display: flex; align-items: center; gap: 7px; height: 26px; min-width: 0; cursor: pointer; color: var(--ink-soft); font-size: 12.5px; white-space: nowrap; }
+  .checks label:hover { color: var(--text); }
+  .checks input { flex: none; width: 14px; height: 14px; }
+  .act { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .act .note { color: var(--muted); font-size: 11.5px; text-align: center; min-height: 16px; }
+  .progress { height: 3px; background: var(--chip); border-radius: 2px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 35%; background: var(--red); animation: slide 1.2s ease-in-out infinite; }
+  @keyframes slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+  .err { padding: 8px 10px; border-left: 3px solid var(--red); background: var(--red-soft); font-size: 12px; border-radius: 0 6px 6px 0; }
+
+  .file { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+  .file:last-child { border-bottom: 0; }
+  .file img, .file .ph { width: 64px; height: 46px; object-fit: cover; border-radius: 4px; background: var(--chip); }
+  .file .fn { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file .fm { color: var(--muted); font-size: 11.5px; }
+  .file .fa { display: flex; gap: 2px; margin: 2px 0 0 -9px; }
+  .result { margin-top: 12px; padding: 4px 12px; border-radius: 8px; background: var(--paper); box-shadow: var(--shadow-sm); }
+  .pv { grid-column: 1 / -1; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); box-shadow: var(--shadow-sm); overflow: hidden; min-width: 0; }
+  .pv-head { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 5px 0 10px; border-bottom: 1px solid var(--line); }
+  .pv-head b { font-size: 12.5px; font-weight: 600; flex: none; }
+  .pv-head .st { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11.5px; }
+  .pv-head .st span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pv-head .st .t { flex: none; font-variant-numeric: tabular-nums; }
+  .pv-head .st.err { color: var(--red); }
+  .pv-head .dot.stale { background: var(--amber); }
+  .pv-body { min-height: 110px; display: grid; place-items: center; background: var(--chip); }
+  .pv img { width: 100%; height: auto; cursor: zoom-in; transition: opacity .15s; }
+  .pv .pv-panels { display: flex; gap: 2px; width: 100%; }
+  .pv .pv-panels img { flex: 1; min-width: 0; }
+  .pv .pv-empty { padding: 16px 14px; text-align: center; color: var(--muted); font-size: 12px; }
+  .pv.stale img { opacity: .45; }
+  .btn.ghost { background: var(--paper); color: var(--text); border: 1px solid var(--line); height: 28px; font-size: 12px; }
+  .btn.ghost:hover { filter: none; background: var(--hover); }
+  .empty { color: var(--muted); font-size: 12.5px; padding: 18px 0; text-align: center; }
+
+
+  #main { display: grid; grid-template-rows: minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); min-width: 0; min-height: 0; }
+  #mapwrap { position: relative; min-height: 0; background: var(--map-bg); overflow: hidden; }
+  #mapA, #mapB { position: absolute; inset: 0; }
+  .ov { position: absolute; z-index: 5; background: var(--paper); color: var(--text); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+  #guard { top: 12px; left: 50%; transform: translateX(-50%); padding: 5px 6px 5px 12px; display: flex; gap: 8px; align-items: center; font-size: 12.5px; }
+  #loading { bottom: 30px; left: 50%; transform: translateX(-50%); padding: 5px 10px; font-size: 12px; display: flex; gap: 7px; align-items: center; color: var(--ink-soft); }
+  .spin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--red); animation: rot .8s linear infinite; flex: none; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  #legend { left: 12px; bottom: 30px; padding: 7px 10px 8px 6px; min-width: 210px; max-width: 360px; font-size: 12px; }
+  #legend .lc-head { display: flex; align-items: center; gap: 6px; }
+  #legend .n { font-weight: 600; }
+  #legend .eye { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; color: var(--text); flex: none; }
+  #legend .eye:hover { background: var(--hover); }
+  #legend .eye svg { width: 16px; height: 16px; }
+  #legend .eye[aria-pressed="false"] { color: var(--muted); }
+  #legend.off .n { color: var(--muted); }
+  #legend .lc-row { display: flex; gap: 6px; align-items: baseline; margin: 3px 0 0 30px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #legend .lc-row .k { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  #legend .lc-row .k.a { color: var(--before); }
+  #legend .lc-row .k.b { color: var(--after); }
+  #legend .lc-row .t { color: var(--muted); }
+  #legend .grad, #legend .gradlab { margin-left: 30px; }
+  .side-tag { top: 12px; padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  #labA { left: 12px; color: var(--before); }
+  #labB { right: 52px; color: var(--after); }
+  #swipe { position: absolute; top: 0; bottom: 0; width: 0; z-index: 4; }
+  #swipe::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: #fff; box-shadow: 0 0 6px rgba(0, 0, 0, .6); }
+  #swipe .knob { position: absolute; top: 50%; left: -16px; width: 32px; height: 32px; margin-top: -16px; border-radius: 50%; background: #fff; color: #2a2824; display: grid; place-items: center; cursor: ew-resize; box-shadow: 0 2px 8px rgba(0, 0, 0, .5); touch-action: none; -webkit-user-select: none; user-select: none; }
+  #swipe .knob svg { width: 16px; height: 16px; }
+  #drawhint { bottom: 70px; left: 50%; transform: translateX(-50%); padding: 6px 12px; font-size: 12px; }
+  #frame { position: absolute; z-index: 3; pointer-events: none; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 0 0 100vmax rgba(0, 0, 0, .38); }
+  #frame span { position: absolute; left: -2px; bottom: calc(100% + 6px); padding: 3px 8px; border-radius: 5px; background: rgba(0, 0, 0, .66); color: #fff; font-size: 11.5px; white-space: nowrap; }
+  #frame.low span { bottom: auto; top: 6px; left: 6px; }
+  #lightbox { position: absolute; inset: 0; z-index: 8; background: rgba(0, 0, 0, .78); display: grid; place-items: center; padding: 24px; cursor: zoom-out; }
+  #lightbox img { max-width: 100%; max-height: 100%; box-shadow: 0 10px 40px rgba(0, 0, 0, .6); }
+  #signin { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .45); display: grid; place-items: center; }
+  #signin .card { width: 340px; padding: 22px 22px 18px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  #signin h2 { margin: 0 0 6px; font: 700 19px/1.25 var(--serif); }
+  #signin p { margin: 0 0 16px; color: var(--ink-soft); font-size: 13px; }
+  #signin .acts { display: flex; flex-direction: column; gap: 6px; }
+  #signin .note { color: var(--muted); font-size: 12px; text-align: center; min-height: 16px; }
+  .maplibregl-ctrl-attrib { font-size: 10.5px; }
+
+  #timeline { background: var(--side); border-top: 1px solid var(--line); position: relative; -webkit-user-select: none; user-select: none; }
+  .tl-bar { display: flex; align-items: center; gap: 6px; height: 40px; padding: 6px 12px 0; min-width: 0; overflow: hidden; }
+  .tl-date { display: flex; align-items: center; gap: 8px; height: 32px; flex: none; padding: 0 4px; }
+  .tl-date b { font: 700 17px/1 var(--serif); white-space: nowrap; }
+  .tl-pair { display: flex; align-items: center; gap: 4px; flex: none; }
+  .mk { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); background: transparent; }
+  .mk:hover { background: var(--hover); }
+  .mk .k { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .mk b { font: 700 15px/1 var(--serif); white-space: nowrap; }
+  .mk.a .k { color: var(--before); }
+  .mk.b .k { color: var(--after); }
+  .mk.a[aria-pressed="true"] { background: var(--paper); border-color: var(--before); box-shadow: inset 0 0 0 1px var(--before), var(--shadow-sm); }
+  .mk.b[aria-pressed="true"] { background: var(--paper); border-color: var(--after); box-shadow: inset 0 0 0 1px var(--after), var(--shadow-sm); }
+  #tlHint { color: var(--ink-soft); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+  .spacer { flex: 1; min-width: 6px; }
+  #tlStatus { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 auto; text-align: right; }
+  #tlStatus.err { color: var(--red); }
+  .tl-range { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; flex: 0 1 auto; min-width: 0; }
+  .tl-range input[type="date"], .tl-range select { height: 26px; font-size: 12px; padding: 0 6px; flex: none; }
+  .tl-range input[type="date"] { width: 122px; }
+  #timeline { container: tl / inline-size; }
+  @container tl (max-width: 780px) { .tl-range input[type="date"], .tl-range span { display: none; } }
+  #win { height: 26px; font-size: 12px; padding: 0 4px; flex: none; }
+  #tl { width: 100%; height: 66px; cursor: pointer; }
+  #tl .grid { stroke: var(--line); stroke-width: 1; }
+  #tl .mlab { fill: var(--muted); font-size: 10.5px; font-family: var(--sans); }
+  #tl .base { stroke: var(--line); stroke-width: 1; }
+  #tl .bar { fill: var(--text); opacity: .9; }
+  #tl .bar.c1 { opacity: .7; }
+  #tl .bar.c2 { fill: var(--muted); opacity: .7; }
+  #tl .bar.c3 { fill: var(--muted); opacity: .4; }
+  #tl .bar.none { fill: var(--muted); opacity: .25; }
+  #tl .win.a { fill: var(--before); opacity: .16; }
+  #tl .win.b, #tl .win.one { fill: var(--after); opacity: .14; }
+  #tl .mark { stroke-width: 2; }
+  #tl .mark.a { stroke: var(--before); }
+  #tl .mark.b, #tl .mark.one { stroke: var(--after); }
+  #tl .hover { stroke: var(--muted); stroke-dasharray: 2 2; }
+  #tltip { position: absolute; bottom: 70px; padding: 5px 9px; font-size: 12px; pointer-events: none; z-index: 6; white-space: nowrap; background: var(--paper); color: var(--text); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); }
+  #tltip b { font-family: var(--serif); }
+
+  #toast { position: fixed; bottom: 110px; left: calc(50% + 150px); transform: translateX(-50%); padding: 8px 14px; border-radius: 8px; background: var(--paper); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow); z-index: 50; max-width: 460px; display: none; font-size: 12.5px; }
+  #toast.on { display: block; }
+  #toast.err { border-left: 3px solid var(--red); }
+</style>
+</head>
+<body>
+<div id="placeholder"><div><b>Sat Desk</b></div></div>
+
+<div id="app">
+  <aside id="side">
+    <header class="brand">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="#c8312b"/>
+        <rect x="12" y="14" width="18" height="36" rx="3" fill="#fbf8f0"/>
+        <rect x="34" y="14" width="18" height="36" rx="3" fill="#fbf8f0" opacity=".55"/>
+        <rect x="31" y="9" width="2" height="46" rx="1" fill="#fbf8f0"/>
+      </svg>
+      <div class="bt"><b>Sat Desk</b></div>
+      <div class="seg" id="engine" role="group" aria-label="Where to make the images">
+        <button data-v="remote" title="Make the images on Fused">Fused</button>
+        <button data-v="local" title="Make the images on this Mac">This Mac</button>
+      </div>
+      <button class="acct" id="acct" title="Fused account"><span>·</span><i class="dot"></i></button>
+    </header>
+    <nav class="seg tabs" role="tablist">
+      <button role="tab" data-tab="browse">Browse</button>
+      <button role="tab" data-tab="layers">Layers</button>
+      <button role="tab" data-tab="export">Export</button>
+      <button role="tab" data-tab="history">History</button>
+    </nav>
+    <div class="panes scroll">
+      <section data-pane="browse">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="Search a place or lat, lng" autocomplete="off" spellcheck="false" />
+          <div class="dropdown" id="qres" hidden></div>
+        </div>
+        <div class="examples" id="examples"></div>
+
+        <div class="side-h">Image</div>
+        <div class="seg" id="dm">
+          <button data-v="day" title="One satellite pass. Clouds stay in the image.">One day</button>
+          <button data-v="best" title="The clearest pixels in a window of days. Most clouds go away.">Best pixels</button>
+        </div>
+        <div class="row" title="Hide dates with more cloud. The value is for the full satellite scene. Scroll or type to change.">
+          <span class="rl">Max cloud</span>
+          <label class="numbox"><input type="number" id="cc" min="0" max="100" step="5" inputmode="numeric" /><span>%</span></label>
+        </div>
+        <div class="row" style="margin-top: 6px">
+          <span class="rl strong">Compare before / after</span><button class="switch" id="cmp" role="switch" aria-checked="false" title="Swipe between two dates"></button>
+        </div>
+      </section>
+
+      <section data-pane="layers" hidden>
+        <div style="height: 8px"></div>
+        <div id="layerList"></div>
+      </section>
+
+      <section data-pane="export" hidden>
+        <div class="form">
+          <span class="fl">Area</span>
+          <div class="seg" id="ext"><button data-v="view">Map view</button><button data-v="box">Draw box</button></div>
+          <span></span><div class="note area" id="extInfo"></div>
+          <div class="pv" id="pv"></div>
+          <span class="fl">Format</span>
+          <div class="seg" id="fmt"><button data-v="png">PNG image</button><button data-v="tif">GeoTIFF</button></div>
+          <span class="fl" id="outL">Output</span>
+          <div class="seg" id="out"><button data-v="tif_visual" title="Colours as on the map, with map position">Rendered</button><button data-v="tif_data" title="Band values (reflectance x 10000), or index values for an index layer">Raw data</button></div>
+          <span class="fl" id="widthL">Width</span>
+          <select id="eWidth"><option value="1200">1200 px</option><option value="1600" selected>1600 px</option><option value="2400">2400 px</option></select>
+          <span id="sizeN"></span><div class="note" id="eSize"></div>
+          <span class="fl" id="resL">Resolution</span>
+          <select id="eRes"><option value="10">10 m</option><option value="20">20 m</option><option value="40">40 m</option><option value="80">80 m</option><option value="160">160 m</option></select>
+          <span id="resN"></span><div class="note" id="eResHint"></div>
+          <div class="sep"></div>
+          <span class="fl" id="titleL">Title</span>
+          <input type="text" id="eTitle" maxlength="140" placeholder="None" />
+          <span class="fl">Place</span>
+          <input type="text" id="ePlace" maxlength="80" title="For the label, the caption and the file name" />
+          <span class="fl full" id="showL">On image</span>
+          <div class="checks" id="eShow">
+            <label><input type="checkbox" id="eDate" /> Date</label>
+            <label title="The text in the Place box"><input type="checkbox" id="ePlaceOn" /> Place</label>
+            <label title="Names of towns and places from the map"><input type="checkbox" id="eLabels" /> Map labels</label>
+            <label><input type="checkbox" id="eScale" /> Scale bar</label>
+            <label><input type="checkbox" id="eNorth" /> North</label>
+            <label title="Dashed line around the satellite scene"><input type="checkbox" id="eOutline" /> Scene outline</label>
+            <label><input type="checkbox" id="eLegend" /> Legend</label>
+          </div>
+          <div class="sep"></div>
+          <span class="fl">Save to</span>
+          <div class="pathbox"><span class="path" id="eDir" title="">–</span><button class="tb-btn sm" id="pickDir" title="Choose a folder">Browse</button></div>
+          <span id="dirN"></span><div id="dirAct"><button class="tb-btn sm" id="resetDir">Use the app folder</button></div>
+        </div>
+        <div class="act">
+          <button class="btn wide" id="exportBtn">Export</button>
+          <div class="progress" id="eProgress" hidden><i></i></div>
+          <div class="note" id="eNote"></div>
+          <div class="err" id="eErr" hidden></div>
+        </div>
+        <div id="eResult"></div>
+      </section>
+
+      <section data-pane="history" hidden>
+        <div class="side-h"><span>Exports</span><span><button class="tb-btn" id="openDir">Open folder</button><button class="tb-btn" id="refreshRecent">Refresh</button></span></div>
+        <div id="recent"><div class="empty">No exports yet.</div></div>
+      </section>
+
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="mapwrap">
+      <div id="mapA"></div>
+      <div id="mapB" style="visibility: hidden"></div>
+      <div id="swipe" hidden><div class="knob" id="knob" title="Drag to compare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6-6 6 6 6M15 6l6 6-6 6"/></svg></div></div>
+      <div class="ov side-tag" id="labA" hidden>Before</div>
+      <div class="ov side-tag" id="labB" hidden>After</div>
+      <div class="ov" id="guard" hidden><span>Zoom in to see images</span><button class="tb-btn" id="guardBtn">Zoom in</button></div>
+      <div class="ov" id="loading" hidden><i class="spin"></i><span id="loadingText">Loading images</span></div>
+      <div class="ov" id="legend" hidden></div>
+      <div class="ov" id="drawhint" hidden>Drag to draw a box · Esc to stop</div>
+      <div id="frame" hidden><span id="frameText"></span></div>
+      <div id="lightbox" hidden></div>
+    </div>
+    <div id="timeline">
+      <div class="tl-bar">
+        <button class="tb-btn" id="prev" title="Earlier date (←)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        </button>
+        <div class="tl-date" id="tlOne"><b id="tlDate">–</b></div>
+        <div class="tl-pair" id="tlPair" hidden>
+          <button class="mk a" data-m="a" title="Click, then pick the Before date"><span class="k">Before</span><b id="mkA">–</b></button>
+          <button class="tb-btn" id="swap" title="Swap the dates">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>
+          </button>
+          <button class="mk b" data-m="b" title="Click, then pick the After date"><span class="k">After</span><b id="mkB">–</b></button>
+        </div>
+        <span id="tlHint" hidden></span>
+        <select id="win" title="Best pixels: the days before and after the date that the image uses"></select>
+        <button class="tb-btn" id="next" title="Later date (→)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <span class="spacer"></span>
+        <span id="tlStatus"></span>
+        <div class="tl-range">
+          <select id="span" title="Time range">
+            <option value="">Range</option>
+            <option value="3">3 months</option>
+            <option value="12">12 months</option>
+            <option value="36">3 years</option>
+            <option value="120">Since 2017</option>
+          </select>
+          <input type="date" id="s" title="Start" /><span>–</span><input type="date" id="e" title="End" />
+        </div>
+      </div>
+      <svg id="tl" role="img" aria-label="Timeline of satellite dates"></svg>
+      <div id="tltip" hidden></div>
+    </div>
+  </main>
+</div>
+<div id="toast"></div>
+<div id="signin" hidden>
+  <div class="card" role="dialog" aria-labelledby="signinH">
+    <h2 id="signinH">Sign in to Fused</h2>
+    <p>Sat Desk makes the images on Fused. Use your Fused account. The sign-in page opens in your browser. To make the images on this Mac without an account, select "This Mac" at the top.</p>
+    <div class="acts">
+      <button class="btn wide" id="signinGo">Sign in to Fused</button>
+      <button class="btn ghost wide" id="signinLater">Not now</button>
+      <div class="note" id="signinNote"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function isPreview() {
+    if (new URLSearchParams(location.search).get("_preview") === "1") return true;
+    try {
+      let w = window;
+      while (w.parent && w.parent !== w) {
+        w = w.parent;
+        if (new URLSearchParams(w.location.search).get("_preview") === "1") return true;
+      }
+    } catch (e) { /* cross-origin ancestor */ }
+    return false;
+  }
+  if (isPreview()) {
+    document.documentElement.classList.add("preview");
+    return;
+  }
+
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const P = fused.params;
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const DAY_MS = 86400000;
+  const LIVE_MIN_ZOOM = 9;
+  const MAP_MIN_ZOOM = LIVE_MIN_ZOOM - 1;
+  const MAX_SEARCH_DEG = 1.15;
+  const MAX_BOX_KM = 100;
+  const MAX_TIF_PX = 4096;
+  const EMPTY = { type: "FeatureCollection", features: [] };
+  const ESRI = "https://services.arcgisonline.com/ArcGIS/rest/services/";
+  const BASEMAP = { tiles: [ESRI + "World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+    labels: [ESRI + "Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"],
+    attr: "Base map © Esri, Maxar, Earthstar Geographics", maxzoom: 19 };
+  const WIN_STEPS = [1, 2, 3, 5, 7, 10, 15, 20, 30, 45, 60];
+
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const today = () => iso(new Date());
+  const ms = (s) => Date.parse(s + "T00:00:00Z");
+  const addDays = (s, n) => iso(new Date(ms(s) + n * DAY_MS));
+  const addMonths = (s, n) => { const t = new Date(ms(s)); t.setUTCMonth(t.getUTCMonth() + n); return iso(t); };
+  const isDay = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+  const fmtDate = (s) => { if (!isDay(s)) return "–"; const d = new Date(ms(s)); return d.getUTCDate() + " " + MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const sleep = (t) => new Promise((r) => setTimeout(r, t));
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fmtBytes = (n) => n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " kB";
+  const ago = (t) => { const s = Date.now() / 1000 - t; return s < 90 ? "just now" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 129600 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago"; };
+  const press = (sel, v) => $$(sel + " button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false"));
+  const setSwitch = (el, on) => el.setAttribute("aria-checked", on ? "true" : "false");
+
+  const DEF = { lng: "-118.545", lat: "34.06", z: "12.4", ly: "true_color", dm: "day", win: "15", cc: "80",
+    mo: "1", tab: "browse", ea: "view", ek: "png", er: "10" };
+  const TABS = ["browse", "layers", "export", "history"];
+  const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.8 8.5 2 12 2 12s3.6 7 10 7a9.8 9.8 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+  function param(k) {
+    const v = P.get(k);
+    if (v != null && v !== "") return v;
+    if (k === "s") return addMonths(today(), -12);
+    if (k === "e") return today();
+    return DEF[k] != null ? DEF[k] : "";
+  }
+  function setParams(obj) {
+    for (const [k, v] of Object.entries(obj)) {
+      const next = v == null ? "" : String(v);
+      const cur = P.get(k) == null ? "" : P.get(k);
+      if (cur !== next) P.set(k, next === "" ? null : next);
+    }
+  }
+
+  const S = {
+    cfg: null, layers: [], byId: {}, examples: [], who: null, engine: "remote", engineKnown: false,
+    mapA: null, mapB: null, syncing: false, swipeX: 0.5, active: "a", pick: null,
+    search: null, searchSeq: 0, searchT: 0, searchKey: "", allDates: [], cover: new Map(), sceneCover: new Map(),
+    drawing: false, drawStart: null, drawBox: null, autoPlace: "", tileErrors: 0, exporting: false,
+    viewKey: "", searching: false, searchErr: "", lastTif: "tif_visual",
+    pv: { state: "none", result: null, seq: 0, step: "", err: "", t0: 0, composing: false },
+  };
+
+  let toastT = 0;
+  function toast(msg, err) {
+    const t = $("#toast");
+    t.textContent = msg;
+    t.className = "on" + (err ? " err" : "");
+    clearTimeout(toastT);
+    toastT = setTimeout(() => { t.className = ""; }, err ? 7000 : 3200);
+  }
+
+  let useDaemon = !!(fused.daemon && fused.daemon.run);
+  let ready = null;
+  function ensureWorker() {
+    if (!ready) {
+      ready = (async () => {
+        const localP = fused.runPython("worker.py", { op: "ping", args: "{}" }, { key: "sat-desk-ping" });
+        const warmP = useDaemon ? fused.daemon.run({ op: "ping", args: "{}" }).catch((e) => e) : null;
+        const local = await localP;
+        if (!useDaemon) return;
+        try {
+          const warm = await warmP;
+          if (warm instanceof Error) throw warm;
+          if (warm.exe !== local.exe || warm.version !== local.version) {
+            await fused.daemon.stop();
+            const again = await fused.daemon.run({ op: "ping", args: "{}" });
+            if (again.exe !== local.exe) useDaemon = false;
+          }
+        } catch (e) {
+          console.warn("[sat desk] warm worker not available, one-shot runs are used", e);
+          useDaemon = false;
+        }
+      })();
+      ready.catch(() => { ready = null; });
+    }
+    return ready;
+  }
+  const NET_MAX = 6;
+  let netBusy = 0;
+  async function call(op, args) {
+    netBusy++;
+    try {
+      return await callWorker(op, args);
+    } finally {
+      netBusy--;
+      pumpTiles();
+    }
+  }
+  async function callWorker(op, args) {
+    await ensureWorker();
+    const params = { op, args: JSON.stringify(args || {}) };
+    if (useDaemon) {
+      try {
+        return await fused.daemon.run(params);
+      } catch (e) {
+        if (e && e.type) throw e;
+        const msg = String((e && e.message) || e);
+        if (/not available|no manifest|not supported|declares no|unsupported|use the other/i.test(msg)) useDaemon = false;
+        else throw e;
+      }
+    }
+    return fused.runPython("worker.py", params, { key: null });
+  }
+  function errText(e) {
+    const m = String((e && e.message) || e || "error");
+    const line = m.split("\n").filter((x) => x.trim()).pop() || m;
+    return line.replace(/^\w+Error:\s*/, "");
+  }
+
+  function loadAsset(path, kind) {
+    return new Promise((resolve, reject) => {
+      const el = document.createElement(kind === "css" ? "link" : "script");
+      el.onload = resolve;
+      el.onerror = () => reject(new Error("cannot load " + path));
+      if (kind === "css") { el.rel = "stylesheet"; el.href = fused.rawUrl(path); } else { el.src = fused.rawUrl(path); }
+      document.head.appendChild(el);
+    });
+  }
+
+  function layer() { return S.byId[param("ly")] || S.layers[0]; }
+  function compareOn() { return param("cmp") === "1"; }
+  function markerDate(m) { return m === "b" ? param("dtb") : param("dt"); }
+  function viewBounds() {
+    const b = S.mapA.getBounds();
+    return [clamp(b.getWest(), -180, 180), clamp(b.getSouth(), -85, 85), clamp(b.getEast(), -180, 180), clamp(b.getNorth(), -85, 85)];
+  }
+  function aoiBox() {
+    const v = (param("aoi") || "").split(",").map(Number);
+    return v.length === 4 && v.every(isFinite) && v[0] < v[2] && v[1] < v[3] ? v : null;
+  }
+  function sizeM(b) {
+    const lat = ((b[1] + b[3]) / 2) * Math.PI / 180;
+    return [(b[2] - b[0]) * 111320 * Math.cos(lat), (b[3] - b[1]) * 110540];
+  }
+  function describeBox(b) {
+    const [w, h] = sizeM(b);
+    const km = (v) => (v >= 9950 ? String(Math.round(v / 1000)) : (v / 1000).toFixed(1));
+    return `${km(w)} × ${km(h)} km`;
+  }
+
+  function tileUrl(which) {
+    const date = markerDate(which);
+    if (!S.engineKnown || !isDay(date)) return null;
+    const L = layer();
+    const best = param("dm") === "best";
+    const q = new URLSearchParams();
+    q.set("date", date);
+    q.set("days", best ? param("win") : "0");
+    q.set("what", L.id);
+    q.set("method", best ? "median" : "best");
+    q.set("max_cloud", best ? param("cc") : "100");
+    q.set("cloud_mask", best ? "true" : "false");
+    q.set("min_zoom", String(LIVE_MIN_ZOOM));
+    q.set("dtype_out_raster", "png");
+    if (L.kind === "index") { q.set("cmap", L.cmap); q.set("vmin", String(L.range[0])); q.set("vmax", String(L.range[1])); }
+    return `${TILE_PROTOCOL}://${LOCAL_TILE_HOST}/tiles/{z}/{x}/{y}?${q.toString()}`;
+  }
+
+  const TILE_PROTOCOL = "s2cache";
+  const TILE_CACHE = "sat-desk-tiles-v1";
+  const TILE_CACHE_MAX = 1500;
+  let tileCacheP = null;
+  function tileCache() {
+    if (!tileCacheP) tileCacheP = (window.caches ? caches.open(TILE_CACHE) : Promise.resolve(null)).catch(() => null);
+    return tileCacheP;
+  }
+  const LOCAL_TILE_HOST = "local.sat-desk";
+  const LOCAL_TILE = /^https:\/\/local\.sat-desk\/tiles\/(\d+)\/(\d+)\/(\d+)\?(.*)$/;
+  const httpUrl = (s2url) => "https://" + s2url.slice(TILE_PROTOCOL.length + 3);
+  let tilePuts = 0;
+  const tileQ = [];
+  const STALE_TILE = Object.assign(new Error("stale tile"), { status: 404 });
+  const tileTemplate = (url) => url.replace(/\/\d+\/\d+\/\d+\?/, "/{z}/{x}/{y}?");
+  function localTile(url, signal, low) {
+    return new Promise((resolve, reject) => {
+      tileQ.push({ url, signal, low, resolve, reject });
+      pumpTiles();
+    });
+  }
+  function pumpTiles() {
+    if (!tileQ.length) return;
+    const live = new Set([S.mapA, S.mapB].filter((m) => m && m._s2url).map((m) => httpUrl(m._s2url)));
+    for (let i = tileQ.length - 1; i >= 0; i--) {
+      const t = tileQ[i];
+      if ((t.signal && t.signal.aborted) || !live.has(tileTemplate(t.url))) {
+        tileQ.splice(i, 1);
+        t.reject(STALE_TILE);
+      }
+    }
+    while (netBusy < NET_MAX && tileQ.length) {
+      const i = tileQ.findIndex((t) => !t.low);
+      const t = tileQ.splice(Math.max(i, 0), 1)[0];
+      runLocalTile(t.url).then(t.resolve, t.reject);
+    }
+  }
+  async function runLocalTile(url) {
+    const [, z, x, y, qs] = url.match(LOCAL_TILE);
+    const r = await call("tile", { z: Number(z), x: Number(x), y: Number(y), q: Object.fromEntries(new URLSearchParams(qs)) });
+    if (Uint8Array.fromBase64) return Uint8Array.fromBase64(r.png).buffer;
+    const bin = atob(r.png), out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.buffer;
+  }
+  async function fetchTile(url, signal, low) {
+    const cache = await tileCache();
+    if (cache) {
+      const hit = await cache.match(url);
+      if (hit) return hit.arrayBuffer();
+    }
+    let buf;
+    if (LOCAL_TILE.test(url)) buf = await localTile(url, signal, low);
+    else {
+      const r = await fetch(url, { signal, priority: low ? "low" : "auto" });
+      if (!r.ok) throw new Error(`tile ${r.status}`);
+      buf = await r.arrayBuffer();
+    }
+    if (cache && buf.byteLength) {
+      cache.put(url, new Response(buf.slice(0), { headers: { "content-type": "image/png" } })).catch(() => {});
+      if (++tilePuts % 100 === 0) pruneTileCache(cache);
+    }
+    return buf;
+  }
+  async function pruneTileCache(cache) {
+    try {
+      const keys = await cache.keys();
+      if (keys.length <= TILE_CACHE_MAX) return;
+      await Promise.all(keys.slice(0, keys.length - TILE_CACHE_MAX + 200).map((k) => cache.delete(k)));
+    } catch (e) { /* the cache is best effort */ }
+  }
+  function installTileProtocol() {
+    maplibregl.addProtocol(TILE_PROTOCOL, async (req, ctl) => {
+      return { data: await fetchTile(httpUrl(req.url), ctl.signal, false) };
+    });
+  }
+
+  let prefetchT = 0, prefetchCtl = null;
+  function schedulePrefetch() {
+    clearTimeout(prefetchT);
+    prefetchT = setTimeout(prefetchRing, 1500);
+  }
+  function stopPrefetch() {
+    if (prefetchCtl) prefetchCtl.abort();
+    prefetchCtl = null;
+  }
+  function prefetchRing() {
+    const m = S.mapA;
+    if (!m || !m._ready || !m._s2url || param("mo") !== "1" || m.getZoom() < MAP_MIN_ZOOM || !m.areTilesLoaded()) return;
+    const z = Math.min(14, Math.round(m.getZoom() + 1));
+    const b = m.getBounds();
+    const t0 = tileXY(b.getWest(), b.getNorth(), z), t1 = tileXY(b.getEast(), b.getSouth(), z);
+    const key = [m._s2url, z, t0, t1].join("|");
+    if (prefetchCtl && prefetchCtl.key === key) return;
+    stopPrefetch();
+    const urls = [];
+    for (let x = t0[0] - 1; x <= t1[0] + 1; x++) for (let y = t0[1] - 1; y <= t1[1] + 1; y++) {
+      if (x >= t0[0] && x <= t1[0] && y >= t0[1] && y <= t1[1]) continue;
+      if (y < 0 || y >= 2 ** z) continue;
+      urls.push(httpUrl(m._s2url).replace("{z}", z).replace("{x}", ((x % 2 ** z) + 2 ** z) % 2 ** z).replace("{y}", y));
+    }
+    const ctl = prefetchCtl = Object.assign(new AbortController(), { key });
+    for (const url of urls.slice(0, 24)) fetchTile(url, ctl.signal, true).catch(() => {});
+  }
+  const mercY = (lat) => {
+    const r = (lat * Math.PI) / 180;
+    return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2;
+  };
+  function tileXY(lng, lat, z) {
+    const n = 2 ** z;
+    return [Math.floor(((lng + 180) / 360) * n), clamp(Math.floor(mercY(lat) * n), 0, n - 1)];
+  }
+
+  function makeMap(container, which) {
+    const m = new maplibregl.Map({
+      container,
+      style: { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": css("--map-bg") } }] },
+      center: [Number(param("lng")), Number(param("lat"))],
+      zoom: Number(param("z")),
+      maxZoom: 17,
+      dragRotate: false,
+      keyboard: false,
+      pitchWithRotate: false,
+      touchPitch: false,
+      attributionControl: which === "a" ? { compact: true } : false,
+      fadeDuration: 0,
+    });
+    m._which = which;
+    m._gen = 0;
+    m._tiles = 0;
+    m.on("load", () => {
+      m.addSource("base", { type: "raster", tiles: BASEMAP.tiles, tileSize: 256, attribution: BASEMAP.attr, maxzoom: BASEMAP.maxzoom });
+      m.addLayer({ id: "base", type: "raster", source: "base" });
+      m.addSource("fp", { type: "geojson", data: EMPTY });
+      m.addLayer({ id: "fp", type: "line", source: "fp", paint: { "line-color": css("--fp"), "line-width": 1.5, "line-dasharray": [3, 2] } });
+      m.addSource("labels", { type: "raster", tiles: BASEMAP.labels, tileSize: 256, maxzoom: 16 });
+      m.addLayer({ id: "labels", type: "raster", source: "labels" });
+      m._ready = true;
+      updateMap(m);
+      if (which === "a") onViewChange();
+    });
+    m.on("sourcedataloading", (e) => { if (isS2(e.sourceId)) setLoading(true); });
+    m.on("sourcedata", (e) => { if (e.sourceId === "s2-" + m._gen && e.isSourceLoaded) dropOldImagery(m, false); });
+    m.on("idle", () => { dropOldImagery(m, false); setLoading(false); if (which === "a") schedulePrefetch(); });
+    m.on("error", (e) => { if (e && isS2(e.sourceId)) { S.tileErrors++; setLoading(false); } });
+    m.on("data", (e) => { if (isS2(e.sourceId) && e.tile && e.dataType === "source") { m._tiles++; renderLegendSoon(); } });
+    m.on("mousedown", onDrawDown);
+    m.on("mousemove", onDrawMove);
+    m.on("mouseup", onDrawUp);
+    return m;
+  }
+
+  const isS2 = (id) => /^s2-\d+$/.test(id || "");
+  function imageryGens(m) {
+    return m.getLayersOrder().filter(isS2).map((id) => Number(id.slice(3)));
+  }
+  function removeGen(m, g) {
+    for (const id of ["s2-" + g, "s2lo-" + g]) {
+      if (m.getLayer(id)) m.removeLayer(id);
+      if (m.getSource(id)) m.removeSource(id);
+    }
+  }
+  function addImagery(m, url) {
+    for (const g of imageryGens(m)) if (g !== m._shown) removeGen(m, g);
+    const g = ++m._gen;
+    const vis = param("mo") === "1" ? "visible" : "none";
+    m.addSource("s2lo-" + g, { type: "raster", tiles: [url], tileSize: 256, minzoom: LIVE_MIN_ZOOM, maxzoom: LIVE_MIN_ZOOM });
+    m.addLayer({ id: "s2lo-" + g, type: "raster", source: "s2lo-" + g, minzoom: LIVE_MIN_ZOOM - 0.5, layout: { visibility: vis },
+      paint: { "raster-fade-duration": 0 } }, "fp");
+    m.addSource("s2-" + g, { type: "raster", tiles: [url], tileSize: 256, minzoom: LIVE_MIN_ZOOM, maxzoom: 14,
+      attribution: "Contains modified Copernicus Sentinel data" });
+    m.addLayer({ id: "s2-" + g, type: "raster", source: "s2-" + g, layout: { visibility: vis }, paint: { "raster-fade-duration": 0 } }, "fp");
+    m._s2url = url;
+    clearTimeout(m._dropT);
+    m._dropT = setTimeout(() => dropOldImagery(m, true), 20000);
+  }
+  function dropOldImagery(m, force) {
+    if (!m._ready || m._shown === m._gen) return;
+    if (!force && m.getSource("s2-" + m._gen) && !m.isSourceLoaded("s2-" + m._gen)) return;
+    m._shown = m._gen;
+    for (const g of imageryGens(m)) if (g !== m._gen) removeGen(m, g);
+  }
+
+  function setLoading(on) {
+    const maps = [S.mapA, compareOn() ? S.mapB : null].filter((m) => m && m._ready);
+    const busy = on || maps.some((m) => m.getZoom() >= MAP_MIN_ZOOM && m.getLayer("s2-" + m._gen) && m.getLayoutProperty("s2-" + m._gen, "visibility") === "visible" && !m.areTilesLoaded());
+    $("#loading").hidden = !busy;
+    $("#loadingText").textContent = S.tileErrors ? `Loading images · ${S.tileErrors} tiles failed` : "Loading images";
+  }
+
+  function updateMap(m) {
+    if (!m || !m._ready) return;
+    const url = m._which === "a" || compareOn() ? tileUrl(m._which) : null;
+    if (url && url !== m._s2url) {
+      S.tileErrors = 0;
+      m._tiles = 0;
+      addImagery(m, url);
+      if (m._which === "a") { stopPrefetch(); schedulePrefetch(); }
+    }
+    const vis = url && param("mo") === "1" ? "visible" : "none";
+    for (const g of imageryGens(m)) {
+      for (const id of ["s2-" + g, "s2lo-" + g]) if (m.getLayoutProperty(id, "visibility") !== vis) m.setLayoutProperty(id, "visibility", vis);
+    }
+    const date = markerDate(m._which);
+    const d = param("dm") === "day" ? S.allDates.find((x) => x.date === date) : null;
+    if (m._fpDate !== d) {
+      m._fpDate = d;
+      m.getSource("fp").setData(d && d.rings.length ? { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: d.rings } } : EMPTY);
+    }
+    updateOverview(m);
+  }
+
+  function updateOverview(m) {
+    const r = S.pv.result;
+    const date = markerDate(m._which);
+    const panel = r && param("tab") === "export" && param("mo") === "1" && (m._which === "a" || compareOn()) ? r.panels.find((p) => p.date === date) : null;
+    const url = panel ? fused.rawUrl(panel.image) : null;
+    if (url === m._ovUrl) return;
+    m._ovUrl = url;
+    if (m.getLayer("ov")) m.removeLayer("ov");
+    if (m.getSource("ov")) m.removeSource("ov");
+    if (!url) return;
+    const [w, s, e, n] = panel.bounds;
+    m.addSource("ov", { type: "image", url, coordinates: [[w, n], [e, n], [e, s], [w, s]] });
+    const above = m.getLayersOrder().find((id) => /^s2(lo)?-\d+$/.test(id) || id === "fp");
+    m.addLayer({ id: "ov", type: "raster", source: "ov", paint: { "raster-fade-duration": 0 } }, above);
+  }
+
+  function syncView() {
+    const m = S.mapA;
+    if (!m) return;
+    const key = [param("lng"), param("lat"), param("z")].join(",");
+    if (key === S.viewKey) return;
+    S.viewKey = key;
+    const lng = Number(param("lng")), lat = Number(param("lat")), z = Number(param("z"));
+    const c = m.getCenter();
+    if (Math.abs(c.lng - lng) > 1e-4 || Math.abs(c.lat - lat) > 1e-4 || Math.abs(m.getZoom() - z) > 0.01) {
+      m.jumpTo({ center: [lng, lat], zoom: z });
+    }
+  }
+
+  function follow(from, to) {
+    if (!to || S.syncing || !compareOn()) return;
+    S.syncing = true;
+    to.jumpTo({ center: from.getCenter(), zoom: from.getZoom() });
+    S.syncing = false;
+  }
+  function onMoveA() { follow(S.mapA, S.mapB); renderFrameSoon(); }
+  function onMoveB() { follow(S.mapB, S.mapA); }
+  function onMoveEnd() { if (!S.syncing) onViewChange(); }
+
+  let moveT = 0;
+  function onViewChange() {
+    const m = S.mapA;
+    if (!m) return;
+    const c = m.getCenter();
+    const view = { lng: c.lng.toFixed(5), lat: c.lat.toFixed(5), z: m.getZoom().toFixed(2) };
+    clearTimeout(moveT);
+    moveT = setTimeout(() => {
+      S.viewKey = [view.lng, view.lat, view.z].join(",");
+      setParams(view);
+    }, 250);
+    schedulePlace();
+    renderGuard();
+    computeCover();
+    renderTimeline();
+    renderExport();
+    maybeSearch(false);
+  }
+
+  function ensureMapB() {
+    if (S.mapB || !S.mapA) return;
+    S.mapB = makeMap($("#mapB"), "b");
+    S.mapB.jumpTo({ center: S.mapA.getCenter(), zoom: S.mapA.getZoom() });
+    S.mapB.on("move", onMoveB);
+    S.mapB.on("moveend", onMoveEnd);
+  }
+  function setCompare(on) {
+    const el = $("#mapB");
+    if (on) {
+      ensureMapB();
+      if (el.style.visibility === "hidden") {
+        el.style.visibility = "";
+        follow(S.mapA, S.mapB);
+      }
+      positionSwipe();
+    } else {
+      el.style.visibility = "hidden";
+    }
+    $("#swipe").hidden = !on;
+    $("#labA").hidden = !on;
+    $("#labB").hidden = !on;
+  }
+  function positionSwipe() {
+    const w = $("#mapwrap").clientWidth;
+    const x = Math.round(w * S.swipeX);
+    $("#mapB").style.clipPath = `inset(0 0 0 ${x}px)`;
+    $("#mapB").style.webkitClipPath = `inset(0 0 0 ${x}px)`;
+    $("#swipe").style.left = x + "px";
+  }
+
+  function startDraw() {
+    S.drawing = true;
+    S.drawStart = null;
+    S.drawBox = null;
+    $("#drawhint").hidden = false;
+    for (const m of [S.mapA, S.mapB]) if (m) { m.dragPan.disable(); m.getCanvas().style.cursor = "crosshair"; }
+  }
+  function stopDraw() {
+    S.drawing = false;
+    S.drawStart = null;
+    S.drawBox = null;
+    $("#drawhint").hidden = true;
+    for (const m of [S.mapA, S.mapB]) if (m) { m.dragPan.enable(); m.getCanvas().style.cursor = ""; }
+    renderFrame();
+  }
+  function boxFrom(a, b) {
+    return [Math.min(a.lng, b.lng), Math.min(a.lat, b.lat), Math.max(a.lng, b.lng), Math.max(a.lat, b.lat)];
+  }
+  function onDrawDown(e) {
+    if (!S.drawing) return;
+    e.preventDefault();
+    S.drawStart = e.lngLat;
+  }
+  function onDrawMove(e) {
+    if (!S.drawing || !S.drawStart) return;
+    S.drawBox = capBox(boxFrom(S.drawStart, e.lngLat), MAX_BOX_KM * 1000);
+    renderFrame();
+  }
+  function onDrawUp(e) {
+    if (!S.drawing || !S.drawStart) return;
+    const raw = boxFrom(S.drawStart, e.lngLat);
+    const b = capBox(raw, MAX_BOX_KM * 1000);
+    stopDraw();
+    const [w, h] = sizeM(b);
+    if (w < 200 || h < 200) { toast("The box is too small."); return; }
+    if (b !== raw) toast(`A box can be ${MAX_BOX_KM} km on each side at most. Sat Desk made it smaller.`);
+    setParams({ aoi: b.map((v) => v.toFixed(5)).join(","), ea: "box" });
+  }
+
+  function capBox(b, maxM, maxDeg) {
+    const [wm, hm] = sizeM(b);
+    let fx = Math.min(1, maxM / wm), fy = Math.min(1, maxM / hm);
+    if (maxDeg) { fx = Math.min(fx, maxDeg / (b[2] - b[0])); fy = Math.min(fy, maxDeg / (b[3] - b[1])); }
+    if (fx >= 1 && fy >= 1) return b;
+    const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+    const hw = ((b[2] - b[0]) / 2) * fx, hh = ((b[3] - b[1]) / 2) * fy;
+    return [clamp(cx - hw, -180, 180), clamp(cy - hh, -85, 85), clamp(cx + hw, -180, 180), clamp(cy + hh, -85, 85)];
+  }
+  function searchBounds() {
+    const v = S.mapA && S.mapA._ready ? viewBounds() : boundsFromParams();
+    return v ? capBox(v, MAX_BOX_KM * 1000, MAX_SEARCH_DEG) : null;
+  }
+
+  function computeCover() {
+    S.cover = new Map();
+    const v = searchBounds();
+    if (!v) return;
+    const N = 8;
+    const pts = [];
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) pts.push([v[0] + (v[2] - v[0]) * (i + 0.5) / N, v[1] + (v[3] - v[1]) * (j + 0.5) / N]);
+    S.sceneCover = new Map();
+    for (const d of S.allDates) {
+      let n = 0;
+      for (const p of pts) if (d.rings.some((r) => inRing(p, r))) n++;
+      S.cover.set(d.date, n / pts.length);
+      if (!n) continue;
+      (d.items || []).forEach((it, i) => {
+        const k = pts.filter((p) => it.rings.some((r) => inRing(p, r))).length;
+        S.sceneCover.set(d.date + "|" + i, k / pts.length);
+      });
+    }
+  }
+  function mosaicInfo(which) {
+    const d = markerDate(which);
+    if (!isDay(d) || !S.search) return null;
+    const best = param("dm") === "best";
+    const win = Number(param("win"));
+    const lo = best ? addDays(d, -win) : d, hi = best ? addDays(d, win) : d;
+    const cc = best ? Number(param("cc")) : 100;
+    const perTile = new Map();
+    const dates = new Set();
+    for (const x of S.allDates) {
+      if (x.date < lo || x.date > hi || !(S.cover.get(x.date) > 0)) continue;
+      (x.items || []).forEach((it, i) => {
+        if (it.cloud != null && it.cloud > cc) return;
+        if (!(S.sceneCover.get(x.date + "|" + i) > 0)) return;
+        const list = perTile.get(it.tile) || [];
+        list.push({ date: x.date, cloud: it.cloud == null ? 100 : it.cloud });
+        perTile.set(it.tile, list);
+      });
+    }
+    let scenes = 0;
+    const used = [];
+    for (const [, list] of perTile) {
+      const top = best ? list.sort((a, b) => a.cloud - b.cloud).slice(0, 6) : list;
+      scenes += top.length;
+      top.forEach((s) => { used.push(s); dates.add(s.date); });
+    }
+    const sorted = [...dates].sort();
+    return { best, lo, hi, scenes, dates: sorted, tiles: [...perTile.keys()].sort(), cloud: used.length ? Math.round(Math.min(...used.map((u) => u.cloud))) : null };
+  }
+  function inRing(p, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if ((yi > p[1]) !== (yj > p[1]) && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  function visibleDates() {
+    const cc = Number(param("cc"));
+    return S.allDates.filter((d) => d.cloud == null || d.cloud <= cc);
+  }
+
+  function maybeSearch(force) {
+    const v = searchBounds();
+    if (!v) return;
+    const s = param("s"), e = param("e");
+    const key = v.map((x) => x.toFixed(4)).join(",") + "|" + s + "|" + e;
+    if (key === S.searchKey && !force) return;
+    clearTimeout(S.searchT);
+    if (!S.search && !S.searching) runSearch(v, s, e, key);
+    else S.searchT = setTimeout(() => runSearch(v, s, e, key), 200);
+  }
+  function boundsFromParams() {
+    const el = $("#mapA");
+    const w = el.clientWidth, h = el.clientHeight;
+    if (!w || !h) return null;
+    const lng = Number(param("lng")), lat = Number(param("lat")), z = Number(param("z"));
+    const scale = 512 * 2 ** z;
+    const x = ((lng + 180) / 360) * scale;
+    const y = mercY(lat) * scale;
+    const toLat = (py) => (Math.atan(Math.sinh(Math.PI * (1 - (2 * py) / scale))) * 180) / Math.PI;
+    return [clamp(((x - w / 2) / scale) * 360 - 180, -180, 180), clamp(toLat(y + h / 2), -85, 85),
+      clamp(((x + w / 2) / scale) * 360 - 180, -180, 180), clamp(toLat(y - h / 2), -85, 85)];
+  }
+  async function runSearch(v, s, e, key) {
+    const bbox = [clamp(v[0], -180, 180), clamp(v[1], -85, 85), clamp(v[2], -180, 180), clamp(v[3], -85, 85)];
+    const seq = ++S.searchSeq;
+    S.searchKey = key;
+    S.searching = true;
+    S.searchErr = "";
+    showStatus();
+    const t0 = performance.now();
+    try {
+      const r = await call("search", { bbox, start: s, end: e, cloud: 100 });
+      if (seq !== S.searchSeq) return;
+      console.debug(`[sat desk] search ${Math.round(performance.now() - t0)} ms (worker ${r.seconds} s, ${r.fetched} of ${r.units} tile units fetched)`);
+      S.search = { bbox: r.bbox, s, e };
+      S.allDates = r.dates || [];
+      S.searching = false;
+      computeCover();
+      autoPick();
+      renderAll();
+    } catch (err) {
+      S.searchKey = "";
+      if (seq !== S.searchSeq) return;
+      S.searching = false;
+      S.searchErr = "Search failed: " + errText(err);
+      showStatus();
+    }
+  }
+  function autoPick() {
+    const dates = visibleDates();
+    if (!dates.length) return;
+    const covered = (d) => (S.cover.get(d.date) || 0) >= 0.9;
+    const pick = (list, maxCloud) => list.filter((d) => covered(d) && (d.cloud == null || d.cloud <= maxCloud)).pop();
+    const best = pick(dates, 20) || pick(dates, 50) || dates.filter(covered).pop() || dates[dates.length - 1];
+    if (!isDay(param("dt"))) setParams({ dt: best.date });
+    if (compareOn() && !isDay(param("dtb"))) setParams({ dtb: best.date });
+  }
+
+  function setStatus(text, err) {
+    const el = $("#tlStatus");
+    el.textContent = text || "";
+    el.className = err ? "err" : "";
+  }
+  function showStatus() {
+    if (S.searching) return setStatus("Finding dates…");
+    if (S.searchErr) return setStatus(S.searchErr, true);
+    if (!S.search) return setStatus("");
+    const all = S.allDates.length, vis = visibleDates().length;
+    setStatus(all ? `${vis} dates` + (all > vis && !compareOn() ? ` · ${all - vis} cloudy hidden` : "") : "No dates here");
+    $("#tlStatus").title = all > vis ? `${all - vis} dates have more than ${param("cc")} % cloud and are not shown` : "";
+  }
+
+  const TL = { padL: 14, padR: 14, top: 4, base: 48, h: 66 };
+  function tlScale() {
+    const svg = $("#tl");
+    const W = svg.clientWidth || 600;
+    const t0 = ms(param("s")), t1 = ms(param("e")) + DAY_MS;
+    const inner = W - TL.padL - TL.padR;
+    return { W, t0, t1, x: (d) => TL.padL + ((ms(d) - t0) / (t1 - t0)) * inner, date: (px) => iso(new Date(t0 + clamp((px - TL.padL) / inner, 0, 1) * (t1 - t0 - 1))) };
+  }
+  function cloudClass(c) { return c == null ? "c2" : c <= 10 ? "c0" : c <= 30 ? "c1" : c <= 60 ? "c2" : "c3"; }
+  function renderTimeline() {
+    const svg = $("#tl");
+    const sc = tlScale();
+    svg.setAttribute("viewBox", `0 0 ${sc.W} ${TL.h}`);
+    const out = [];
+    const sDate = param("s"), eDate = param("e");
+    const months = [];
+    let m = sDate.slice(0, 8) + "01";
+    if (m < sDate) m = addMonths(m, 1);
+    while (m <= eDate) { months.push(m); m = addMonths(m, 1); }
+    const span = sc.W / Math.max(1, months.length);
+    const every = span > 34 ? 1 : span > 12 ? 3 : 12;
+    let labelEnd = -Infinity;
+    for (const mo of months) {
+      const X = sc.x(mo);
+      const mi = Number(mo.slice(5, 7)) - 1;
+      const major = mi === 0;
+      if (mi % every !== 0) continue;
+      out.push(`<line class="grid" x1="${X.toFixed(1)}" x2="${X.toFixed(1)}" y1="${TL.top}" y2="${TL.base + 3}"/>`);
+      const label = every >= 12 ? mo.slice(0, 4) : major ? (span > 60 ? MONTHS[mi] + " " + mo.slice(0, 4) : mo.slice(0, 4)) : MONTHS[mi];
+      if (X + 3 < labelEnd + 6) continue;
+      out.push(`<text class="mlab" x="${(X + 3).toFixed(1)}" y="${TL.h - 4}">${label}</text>`);
+      labelEnd = X + 3 + label.length * 6.2;
+    }
+    out.push(`<line class="base" x1="${TL.padL}" x2="${sc.W - TL.padR}" y1="${TL.base + 0.5}" y2="${TL.base + 0.5}"/>`);
+    const best = param("dm") === "best";
+    const marks = compareOn() ? ["a", "b"] : ["one"];
+    if (best) {
+      const win = Number(param("win"));
+      for (const k of marks) {
+        const d = markerDate(k === "b" ? "b" : "a");
+        if (!isDay(d)) continue;
+        const x0 = sc.x(addDays(d, -win)), x1 = sc.x(addDays(d, win + 1));
+        out.push(`<rect class="win ${k}" x="${x0.toFixed(1)}" y="${TL.top}" width="${Math.max(2, x1 - x0).toFixed(1)}" height="${TL.base - TL.top}"/>`);
+      }
+    }
+    const vis = visibleDates();
+    const days = Math.max(1, (sc.t1 - sc.t0) / DAY_MS);
+    const bw = clamp((sc.W / days) * 0.7, 2, 6);
+    for (const d of vis) {
+      const cov = S.cover.has(d.date) ? S.cover.get(d.date) : 1;
+      const h = cov > 0 ? 6 + Math.round(cov * 32) : 4;
+      const cls = cov > 0 ? cloudClass(d.cloud) : "none";
+      out.push(`<rect class="bar ${cls}" x="${(sc.x(d.date) + 0.5 * (sc.x(addDays(d.date, 1)) - sc.x(d.date)) - bw / 2).toFixed(1)}" y="${TL.base - h}" width="${bw.toFixed(1)}" height="${h}" rx="1"/>`);
+    }
+    for (const k of marks) {
+      const d = markerDate(k === "b" ? "b" : "a");
+      if (!isDay(d) || d < sDate || d > eDate) continue;
+      const X = (sc.x(d) + 0.5 * (sc.x(addDays(d, 1)) - sc.x(d))).toFixed(1);
+      out.push(`<line class="mark ${k}" x1="${X}" x2="${X}" y1="${TL.top}" y2="${TL.base + 4}"/>`);
+    }
+    out.push(`<line class="hover" id="tlHover" x1="-10" x2="-10" y1="${TL.top}" y2="${TL.base + 4}"/>`);
+    svg.innerHTML = out.join("");
+    const cmp = compareOn();
+    $("#tlOne").hidden = cmp;
+    $("#tlPair").hidden = !cmp;
+    $("#tlDate").textContent = fmtDate(param("dt"));
+    $("#mkA").textContent = fmtDate(param("dt"));
+    $("#mkB").textContent = fmtDate(param("dtb"));
+    $$("#tlPair .mk").forEach((b) => b.setAttribute("aria-pressed", b.dataset.m === S.active ? "true" : "false"));
+    const hint = $("#tlHint");
+    hint.hidden = !cmp || !S.pick;
+    hint.textContent = S.pick === "b" ? "Now pick After" : "Pick Before";
+    hint.style.color = S.pick === "b" ? "var(--after)" : "var(--before)";
+    showStatus();
+    renderLegend();
+  }
+
+  function nearestDate(day, list) {
+    let best = null, bd = Infinity;
+    for (const d of list) {
+      const dd = Math.abs(ms(d.date) - ms(day));
+      if (dd < bd) { bd = dd; best = d; }
+    }
+    return best;
+  }
+  function tlPick(px, snapAlways) {
+    const sc = tlScale();
+    const day = sc.date(px);
+    const near = nearestDate(day, visibleDates());
+    if (!near) return snapAlways ? null : { date: day, info: null };
+    if (snapAlways || Math.abs(sc.x(near.date) - sc.x(day)) <= 6) return { date: near.date, info: near };
+    return { date: day, info: null };
+  }
+  function setMarker(m, date) {
+    if (!isDay(date)) return;
+    setParams(m === "b" ? { dtb: date } : { dt: date });
+  }
+  function onTimelineClick(ev) {
+    const r = $("#tl").getBoundingClientRect();
+    const hit = tlPick(ev.clientX - r.left, param("dm") === "day");
+    if (!hit) return;
+    setMarker(compareOn() ? S.active : "a", hit.date);
+    if (compareOn() && S.pick) {
+      S.pick = S.pick === "a" ? "b" : null;
+      if (S.pick) S.active = "b";
+      renderTimeline();
+    }
+  }
+  function onTimelineHover(ev) {
+    const r = $("#tl").getBoundingClientRect();
+    const px = ev.clientX - r.left;
+    const hit = tlPick(px, false);
+    const tip = $("#tltip");
+    if (!hit) { tip.hidden = true; return; }
+    const sc = tlScale();
+    const X = sc.x(hit.date) + 0.5 * (sc.x(addDays(hit.date, 1)) - sc.x(hit.date));
+    const line = $("#tlHover");
+    if (line) { line.setAttribute("x1", X); line.setAttribute("x2", X); }
+    let html = (compareOn() ? `<span class="muted">${S.active === "b" ? "After" : "Before"}:</span> ` : "") + `<b>${fmtDate(hit.date)}</b>`;
+    if (hit.info) {
+      const cov = S.cover.has(hit.date) ? Math.round(S.cover.get(hit.date) * 100) : null;
+      html += ` <span class="muted">· cloud ${hit.info.cloud == null ? "?" : Math.round(hit.info.cloud)} %` + (cov != null ? ` · ${cov} % of view` : "") + `</span>`;
+    } else if (param("dm") === "day") {
+      html += ` <span class="muted">· no image</span>`;
+    }
+    tip.innerHTML = html;
+    tip.hidden = false;
+    const tw = tip.offsetWidth;
+    tip.style.left = clamp(px - tw / 2, 6, r.width - tw - 6) + "px";
+  }
+  function step(dir) {
+    const m = compareOn() ? S.active : "a";
+    const cur = markerDate(m);
+    const list = visibleDates().filter((d) => (S.cover.get(d.date) || 0) > 0);
+    const pool = list.length ? list : visibleDates();
+    if (!pool.length) return;
+    let next = null;
+    if (!isDay(cur)) next = pool[pool.length - 1];
+    else if (dir < 0) next = pool.filter((d) => d.date < cur).pop();
+    else next = pool.find((d) => d.date > cur);
+    if (next) setMarker(m, next.date);
+  }
+
+  const shortDate = (s) => { const d = new Date(ms(s)); return d.getUTCDate() + " " + MONTHS[d.getUTCMonth()]; };
+  function mosaicLine(which, tag) {
+    const k = tag ? `<span class="k ${which}">${which === "a" ? "Before" : "After"}</span>` : "";
+    const info = mosaicInfo(which);
+    if (!info) return `<div class="lc-row">${k}<span class="t">${isDay(markerDate(which)) ? "Finding images…" : "Pick a date on the timeline"}</span></div>`;
+    if (!info.scenes) return `<div class="lc-row">${k}<span class="t">No image here${info.best ? " in this window" : " on this day"}</span></div>`;
+    const d = info.dates;
+    const when = info.best && d.length > 1 ? `${shortDate(d[0])} – ${fmtDate(d[d.length - 1])}` : fmtDate(d[0]);
+    return `<div class="lc-row">${k}<span>${esc(when)}</span></div>`;
+  }
+  let legendT = 0;
+  function renderLegendSoon() { clearTimeout(legendT); legendT = setTimeout(renderLegend, 300); }
+  const gradHtml = (L) => `<div class="grad" style="background: linear-gradient(90deg, ${L.gradient.join(", ")})"></div><div class="gradlab"><span>${esc(L.low)}</span><span>${esc(L.high)}</span></div>`;
+  function renderLegend() {
+    const L = layer();
+    const lg = $("#legend");
+    const on = param("mo") === "1";
+    const loaded = [S.mapA, S.mapB].filter(Boolean).reduce((n, m) => n + (m._tiles || 0), 0);
+    lg.className = "ov" + (on ? "" : " off");
+    const rows = compareOn() ? mosaicLine("a", true) + mosaicLine("b", true) : mosaicLine("a", false);
+    const html = `<div class="lc-head"><button class="eye" id="eye" aria-pressed="${on}">${on ? EYE : EYE_OFF}</button><span class="n">${esc(L.name)}</span></div>${rows}${L.kind === "index" && on ? gradHtml(L) : ""}`;
+    if (lg._html !== html) { lg.innerHTML = html; lg._html = html; }
+    $("#eye").title = `${on ? "Hide" : "Show"} the satellite image (M) · ${loaded} map tiles from ${S.engine === "local" ? "this Mac" : "Fused"}`;
+    lg.hidden = false;
+  }
+  function toggleMosaic() { setParams({ mo: param("mo") === "1" ? "0" : "1" }); }
+  function renderLayers() {
+    const cur = layer().id;
+    const list = $("#layerList");
+    if (!list.children.length) list.innerHTML = S.layers.map((L) => `
+      <label class="layer">
+        <input type="radio" name="ly" value="${esc(L.id)}" />
+        <div class="n">${esc(L.name)}</div><div class="r">${esc(L.read)}</div>
+        ${L.kind === "index" ? gradHtml(L) : `<div class="w">${esc(L.what)}</div>`}
+      </label>`).join("");
+    for (const el of list.children) {
+      const input = $("input", el);
+      el.classList.toggle("on", input.value === cur);
+      input.checked = input.value === cur;
+    }
+  }
+
+  function renderControls() {
+    const tab = TABS.includes(param("tab")) ? param("tab") : "browse";
+    $$(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === tab ? "true" : "false"));
+    $$("section[data-pane]").forEach((s) => { s.hidden = s.dataset.pane !== tab; });
+    press("#dm", param("dm"));
+    const win = $("#win");
+    win.hidden = param("dm") !== "best";
+    const w = param("win");
+    if (![...win.options].some((o) => o.value === w)) win.insertAdjacentHTML("beforeend", `<option value="${esc(w)}">± ${esc(w)} days</option>`);
+    win.value = w;
+    if (document.activeElement !== $("#cc")) $("#cc").value = param("cc");
+    setSwitch($("#cmp"), compareOn());
+    $("#s").value = param("s");
+    $("#e").value = param("e");
+    $("#s").max = today();
+    $("#e").max = today();
+    $("#s").min = "2015-06-27";
+    $("#e").min = "2015-06-27";
+  }
+
+  function numBox(input, steps, commit) {
+    let t = 0, acc = 0;
+    const fit = (v) => {
+      v = Number(v);
+      if (!isFinite(v)) return null;
+      return steps.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a));
+    };
+    const send = (wait) => { clearTimeout(t); t = setTimeout(() => commit(String(input.value)), wait); };
+    const move = (dir) => {
+      const cur = fit(input.value);
+      const i = steps.indexOf(cur == null ? steps[0] : cur);
+      input.value = steps[clamp(i + dir, 0, steps.length - 1)];
+      send(250);
+    };
+    input.parentElement.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      acc += e.deltaY;
+      if (Math.abs(acc) < 30) return;
+      move(acc < 0 ? 1 : -1);
+      acc = 0;
+    }, { passive: false });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); move(e.key === "ArrowUp" ? 1 : -1); }
+      else if (e.key === "Enter") input.blur();
+    });
+    input.addEventListener("change", () => {
+      const v = fit(input.value);
+      input.value = v == null ? steps[0] : v;
+      send(0);
+    });
+  }
+
+  function exportArea() {
+    const box = aoiBox();
+    if (param("ea") === "box" && box) return box;
+    return frameBounds();
+  }
+  function frameBounds() {
+    const m = S.mapA;
+    if (!m || !m._ready) return null;
+    const c = m.getCanvas();
+    const w = c.clientWidth, h = c.clientHeight;
+    const px = Math.round(w * 0.08), py = Math.round(h * 0.1);
+    const nw = m.unproject([px, py]), se = m.unproject([w - px, h - py]);
+    const b = [clamp(nw.lng, -180, 180), clamp(se.lat, -85, 85), clamp(se.lng, -180, 180), clamp(nw.lat, -85, 85)];
+    return capBox(b, MAX_BOX_KM * 1000);
+  }
+  function exportDates() {
+    const a = param("dt"), b = param("dtb");
+    if (compareOn()) return isDay(a) && isDay(b) ? [a, b].sort() : null;
+    return isDay(a) ? [a] : null;
+  }
+  function pngSize(area, width, n) {
+    const gap = Math.round(width * 0.004);
+    const pw = Math.floor((width - gap * (n - 1)) / n);
+    const [wm, hm] = sizeM(area);
+    return { w: pw * n + gap * (n - 1), h: Math.round((pw * hm) / wm), mpp: wm / pw };
+  }
+  function fmtMpp(mpp) { return mpp < 10 ? `1 px = ${mpp.toFixed(1)} m (enlarged from 10 m)` : `1 px = ${Math.round(mpp)} m`; }
+  function placeName() { return $("#ePlace").value.trim() || S.autoPlace; }
+  let placeT = 0, placeSeq = 0;
+  function schedulePlace() {
+    clearTimeout(placeT);
+    placeT = setTimeout(async () => {
+      if (!S.mapA || S.mapA.getZoom() < 6) return;
+      const c = S.mapA.getCenter();
+      const my = ++placeSeq;
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=en&lat=${c.lat.toFixed(4)}&lon=${c.lng.toFixed(4)}`);
+        const js = await r.json();
+        if (my !== placeSeq) return;
+        const a = js.address || {};
+        S.autoPlace = a.city || a.town || a.village || a.municipality || a.county || a.state || (js.display_name || "").split(",")[0] || "";
+        $("#ePlace").placeholder = S.autoPlace || "";
+        renderExport();
+      } catch (e) { /* no place name, the title stays generic */ }
+    }, 1200);
+  }
+
+  function exportSpec(preview) {
+    const area = exportArea(), dates = exportDates();
+    if (!area || !dates) return null;
+    const day = param("dm") === "day";
+    return {
+      area: area.map((v) => Number(v.toFixed(5))), layer: layer().id, dates, mode: param("dm"), win: Number(param("win")),
+      cloud: day ? 100 : Number(param("cc")), kind: preview ? "png" : param("ek"), resolution: Number(param("er")),
+      png_width: Number($("#eWidth").value), title: $("#eTitle").value.trim(), place: placeName(),
+      date_label: $("#eDate").checked, place_label: $("#ePlaceOn").checked, map_labels: $("#eLabels").checked,
+      scale_bar: $("#eScale").checked, north: $("#eNorth").checked, legend: $("#eLegend").checked && layer().kind === "index",
+      outlines: $("#eOutline").checked && day ? Object.fromEntries(dates.map((d) => [d, (S.allDates.find((x) => x.date === d) || { rings: [] }).rings])) : {},
+      preview: !!preview,
+    };
+  }
+  const dataKey = (sp) => JSON.stringify([sp.area, sp.layer, sp.dates, sp.mode, sp.win, sp.cloud, sp.png_width]);
+  const looksKey = (sp) => JSON.stringify([sp.title, sp.place, sp.date_label, sp.place_label, sp.map_labels, sp.scale_bar, sp.north, sp.legend, Object.keys(sp.outlines)]);
+
+  function renderExport() {
+    const ek = param("ek");
+    const png = ek === "png";
+    if (!png) S.lastTif = ek;
+    press("#fmt", png ? "png" : "tif");
+    press("#out", ek);
+    const box = aoiBox();
+    const ea = param("ea") === "box" && box ? "box" : "view";
+    press("#ext", ea);
+    $$("#ext button")[1].textContent = box ? "My box" : "Draw box";
+    for (const id of ["#outL", "#out"]) $(id).hidden = png;
+    for (const id of ["#titleL", "#eTitle", "#widthL", "#eWidth", "#sizeN", "#eSize", "#showL", "#eShow"]) $(id).hidden = !png;
+    for (const id of ["#resL", "#eRes", "#resN", "#eResHint"]) $(id).hidden = png;
+    $("#eOutline").parentElement.hidden = param("dm") !== "day";
+    $("#eLegend").parentElement.hidden = layer().kind !== "index";
+    const area = exportArea();
+    const dates = exportDates();
+    const ext = $("#extInfo");
+    const capped = ea === "view" && area && S.mapA && sizeM(viewBounds())[0] * 0.84 > MAX_BOX_KM * 1000;
+    ext.innerHTML = area ? `<span>${esc(describeBox(area))}${capped ? " (the limit)" : ""}</span>`
+      + (ea === "box" ? `<button class="tb-btn sm" id="redraw">Redraw</button><button class="tb-btn sm" id="clearBox">Remove</button>` : "") : "";
+    if (ea === "box") {
+      $("#redraw").onclick = startDraw;
+      $("#clearBox").onclick = () => setParams({ aoi: "", ea: "view" });
+    }
+    if (area) {
+      const sz = pngSize(area, Number($("#eWidth").value), dates ? dates.length : 1);
+      $("#eSize").textContent = `${sz.w} × ${sz.h} px · ${fmtMpp(sz.mpp)}`;
+    } else {
+      $("#eSize").textContent = "";
+    }
+    $("#eRes").value = param("er");
+    let ok = !!(dates && area);
+    let hint = "";
+    if (area && !png) {
+      const [w, h] = sizeM(area);
+      const res = Number(param("er"));
+      const px = [Math.round(w / res), Math.round(h / res)];
+      const big = Math.max(px[0], px[1]) > MAX_TIF_PX;
+      $("#eResHint").textContent = `${px[0]} × ${px[1]} px` + (big ? ` · over ${MAX_TIF_PX} px, choose a larger size` : "");
+      $("#eResHint").style.color = big ? "var(--red)" : "";
+      if (big) ok = false;
+    }
+    if (!dates) hint = compareOn() ? "Pick a Before and an After date on the timeline." : "Pick a date on the timeline.";
+    else {
+      const jobs = dates.length * (param("dm") === "best" ? 2 : 1);
+      const ready = png && S.pv.result && S.pv.state !== "busy" && S.pv.result.key === dataKey(exportSpec(true));
+      hint = ready ? "The preview data is ready · a few seconds" : `${jobs} job${jobs > 1 ? "s" : ""} on ${S.engine === "local" ? "this Mac" : "Fused"} · about ${jobs > 1 ? 15 : 10} s`;
+    }
+    const signedOut = needsSignIn();
+    if (!S.exporting) {
+      $("#eNote").textContent = signedOut ? "Exports run on Fused with your account." : hint;
+      $("#exportBtn").disabled = signedOut ? false : !ok;
+      $("#exportBtn").textContent = signedOut ? "Sign in to Fused" : dates && dates.length === 2 ? "Export before and after" : "Export";
+    }
+    if (S.cfg) { $("#eDir").textContent = S.cfg.export_dir; $("#eDir").title = S.cfg.export_dir; }
+    const custom = !!(S.cfg && S.cfg.settings && S.cfg.settings.export_dir);
+    $("#dirN").hidden = $("#dirAct").hidden = !custom;
+    renderFrame();
+    renderPreview();
+  }
+
+  let frameRaf = 0;
+  function renderFrameSoon() {
+    if (frameRaf || param("tab") !== "export") return;
+    frameRaf = requestAnimationFrame(() => { frameRaf = 0; renderFrame(); });
+  }
+  function renderFrame() {
+    const f = $("#frame");
+    const m = S.mapA;
+    const area = param("tab") === "export" && m && m._ready ? (S.drawing ? S.drawBox : exportArea()) : null;
+    if (!area) { f.hidden = true; return; }
+    const p0 = m.project([area[0], area[3]]), p1 = m.project([area[2], area[1]]);
+    f.style.left = Math.round(p0.x) + "px";
+    f.style.top = Math.round(p0.y) + "px";
+    f.style.width = Math.max(2, Math.round(p1.x - p0.x)) + "px";
+    f.style.height = Math.max(2, Math.round(p1.y - p0.y)) + "px";
+    f.classList.toggle("low", p0.y < 34);
+    const dates = exportDates();
+    const parts = [describeBox(area)];
+    if (param("ek") === "png") { const sz = pngSize(area, Number($("#eWidth").value), dates ? dates.length : 1); parts.push(`${sz.w} × ${sz.h} px`); }
+    $("#frameText").textContent = (S.drawing ? "" : "Export area · ") + parts.join(" · ");
+    f.hidden = false;
+  }
+
+  let pvTick = 0, composeT = 0;
+  function renderPreview() {
+    const el = $("#pv");
+    const spec = exportSpec(true);
+    const r = S.pv.result;
+    const busy = S.pv.state === "busy";
+    const fresh = r && spec && r.key === dataKey(spec);
+    clearInterval(pvTick);
+    if (busy) pvTick = setInterval(renderPreview, 1000);
+    const signedOut = needsSignIn();
+    let st = "", tone = "";
+    if (busy) st = `<i class="spin"></i><span title="${esc(S.pv.step)}">${esc(S.pv.step || "Making the preview")}</span><span class="t">${Math.round((Date.now() - S.pv.t0) / 1000)} s</span>`;
+    else if (S.pv.composing) st = `<i class="spin"></i><span>Adding the text</span>`;
+    else if (S.pv.err) { tone = " err"; st = `<span title="${esc(S.pv.err)}">${r ? esc(S.pv.err) : "The preview failed"}</span>`; }
+    else if (r && !spec) st = `<i class="dot stale"></i><span>${compareOn() ? "Pick two dates" : "Pick a date"}</span>`;
+    else if (r && !fresh) st = `<i class="dot stale"></i><span title="The area or the date changed">Out of date</span>`;
+    else if (fresh) st = `<i class="dot ok"></i><span>Up to date</span>`;
+    const act = busy || !spec ? "" : signedOut && !fresh ? ["signin", "Sign in"] : S.pv.err ? ["run", "Try again"] : !r ? ["run", "Make preview"] : !fresh ? ["run", "Update"] : "";
+    const head = `<div class="pv-head"><b>Preview</b><div class="st${tone}">${st}</div>${act ? `<button class="tb-btn sm" data-pv="${act[0]}">${act[1]}</button>` : ""}</div>`;
+    let body;
+    if (r) {
+      body = param("ek") === "png" ? `<img src="${esc(fused.rawUrl(r.image))}" alt="Preview of the export" data-full="${esc(fused.rawUrl(r.image))}" />`
+        : `<div class="pv-panels">${r.panels.map((p) => `<img src="${esc(fused.rawUrl(p.image))}" alt="" data-full="${esc(fused.rawUrl(p.image))}" />`).join("")}</div>`;
+    } else if (busy) {
+      body = `<i class="spin"></i>`;
+    } else {
+      const msg = S.pv.err ? esc(S.pv.err) : !spec ? (compareOn() ? "Pick a Before and an After date on the timeline." : "Pick a date on the timeline.")
+        : signedOut ? "Sign in to Fused to make a preview." : "See the image before you save it.";
+      body = `<div class="pv-empty">${msg}</div>`;
+    }
+    el.className = "pv" + (r && (busy || !fresh) ? " stale" : "");
+    const html = head + `<div class="pv-body">${body}</div>`;
+    if (el._html !== html) { el.innerHTML = html; el._html = html; }
+    if (fresh && !busy && spec && looksKey(spec) !== r.looks) {
+      clearTimeout(composeT);
+      composeT = setTimeout(composePreview, 300);
+    }
+  }
+  async function runPreview() {
+    const spec = exportSpec(true);
+    if (!spec) return;
+    if (needsSignIn()) { openSignIn(); return; }
+    const my = ++S.pv.seq;
+    Object.assign(S.pv, { state: "busy", step: "Starting", err: "", t0: Date.now() });
+    renderPreview();
+    try {
+      const st = await runJob(spec, (x) => { if (my === S.pv.seq) { S.pv.step = x.step || S.pv.step; renderPreview(); } });
+      if (my !== S.pv.seq) return;
+      S.pv.result = { ...st.result.preview, key: dataKey(spec), looks: looksKey(spec) };
+      S.pv.state = "ready";
+    } catch (e) {
+      if (my !== S.pv.seq) return;
+      S.pv.state = "none";
+      S.pv.err = e && e.detail ? e.message : errText(e);
+      if (e && e.detail) console.warn("[sat desk] preview detail\n" + e.detail);
+    }
+    [S.mapA, S.mapB].forEach(updateMap);
+    renderGuard();
+    renderExport();
+  }
+  async function composePreview() {
+    const spec = exportSpec(true);
+    const r = S.pv.result;
+    if (!spec || !r || S.pv.state === "busy" || r.key !== dataKey(spec)) return;
+    const looks = looksKey(spec);
+    if (looks === r.looks || S.pv.composing) return;
+    S.pv.composing = true;
+    renderPreview();
+    try {
+      const out = await call("preview_compose", { spec });
+      if (S.pv.result === r) Object.assign(r, { image: out.image, looks });
+      S.pv.err = "";
+    } catch (e) {
+      S.pv.err = errText(e);
+    }
+    S.pv.composing = false;
+    renderPreview();
+  }
+  function showLightbox(src) {
+    const lb = $("#lightbox");
+    lb.innerHTML = `<img src="${esc(src)}" alt="" />`;
+    lb.hidden = false;
+  }
+
+  function renderAll() {
+    renderControls();
+    renderLayers();
+    renderTimeline();
+    renderExport();
+  }
+
+  function renderGuard() {
+    if (!S.mapA || !S.mapA._ready) return;
+    $("#guard").hidden = S.mapA.getZoom() >= MAP_MIN_ZOOM || (param("tab") === "export" && !!S.pv.result);
+  }
+
+  let applyQueued = false;
+  function scheduleApply() {
+    if (applyQueued) return;
+    applyQueued = true;
+    Promise.resolve().then(() => { applyQueued = false; apply(); });
+  }
+  let lastRange = "", lastTab = "";
+  function apply() {
+    setCompare(compareOn());
+    syncView();
+    [S.mapA, S.mapB].forEach(updateMap);
+    renderGuard();
+    const range = param("s") + "|" + param("e");
+    if (range !== lastRange) { lastRange = range; if (S.mapA && S.mapA._ready) maybeSearch(false); }
+    if (param("tab") !== lastTab) {
+      lastTab = param("tab");
+      if (lastTab === "history") renderHistory();
+    }
+    renderAll();
+  }
+
+  function wireUI() {
+    $$(".tabs button").forEach((b) => b.addEventListener("click", () => setParams({ tab: b.dataset.tab })));
+    $("#acct").addEventListener("click", () => {
+      if (S.who && S.who.logged_in) toast(`Signed in to Fused as ${S.who.email || S.who.handle}`);
+      else openSignIn();
+    });
+    $("#legend").addEventListener("click", (e) => { if (e.target.closest("#eye")) toggleMosaic(); });
+    window.addEventListener("focus", () => refreshAccount(false));
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshAccount(false); });
+    $$("#dm button").forEach((b) => b.addEventListener("click", () => {
+      const v = b.dataset.v;
+      const upd = { dm: v };
+      if (v === "day") {
+        const vis = visibleDates();
+        for (const [k, m] of [["dt", "a"], ["dtb", "b"]]) {
+          const d = markerDate(m);
+          if (isDay(d) && vis.length && !vis.some((x) => x.date === d)) { const n = nearestDate(d, vis); if (n) upd[k] = n.date; }
+        }
+      }
+      setParams(upd);
+    }));
+    $("#win").innerHTML = WIN_STEPS.map((d) => `<option value="${d}">± ${d} day${d > 1 ? "s" : ""}</option>`).join("");
+    $("#win").addEventListener("change", () => setParams({ win: $("#win").value }));
+    numBox($("#cc"), Array.from({ length: 21 }, (_, i) => i * 5), (v) => setParams({ cc: v }));
+    $("#cmp").addEventListener("click", () => toggleCompare(!compareOn()));
+    $$("#tlPair .mk").forEach((b) => b.addEventListener("click", () => { S.active = b.dataset.m; S.pick = null; renderTimeline(); }));
+    $("#swap").addEventListener("click", () => setParams({ dt: param("dtb"), dtb: param("dt") }));
+    $("#layerList").addEventListener("change", (e) => { if (e.target.name === "ly") setParams({ ly: e.target.value }); });
+    $("#span").addEventListener("change", () => {
+      const n = Number($("#span").value);
+      if (n) setParams({ s: n >= 120 ? "2017-01-01" : addMonths(today(), -n), e: today() });
+      $("#span").value = "";
+    });
+    $("#s").addEventListener("change", () => { if (isDay($("#s").value) && $("#s").value < param("e")) setParams({ s: $("#s").value }); else renderControls(); });
+    $("#e").addEventListener("change", () => { if (isDay($("#e").value) && $("#e").value > param("s")) setParams({ e: $("#e").value }); else renderControls(); });
+    $("#prev").addEventListener("click", () => step(-1));
+    $("#next").addEventListener("click", () => step(1));
+    const tl = $("#tl");
+    tl.addEventListener("click", onTimelineClick);
+    tl.addEventListener("mousemove", onTimelineHover);
+    tl.addEventListener("mouseleave", () => { $("#tltip").hidden = true; const l = $("#tlHover"); if (l) { l.setAttribute("x1", -10); l.setAttribute("x2", -10); } });
+    new ResizeObserver(() => { renderTimeline(); renderFrame(); if (S.mapB) positionSwipe(); }).observe($("#main"));
+    document.addEventListener("keydown", (e) => {
+      if (/^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || "")) return;
+      if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
+      else if (e.key === "Escape" && S.drawing) stopDraw();
+      else if (e.key === "Escape" && !$("#lightbox").hidden) $("#lightbox").hidden = true;
+      else if ((e.key === "m" || e.key === "M") && !e.metaKey && !e.ctrlKey && !e.altKey) toggleMosaic();
+    });
+    $("#guardBtn").addEventListener("click", () => S.mapA.easeTo({ zoom: MAP_MIN_ZOOM + 0.5 }));
+    $$("#fmt button").forEach((b) => b.addEventListener("click", () => setParams({ ek: b.dataset.v === "png" ? "png" : S.lastTif })));
+    $$("#out button").forEach((b) => b.addEventListener("click", () => setParams({ ek: b.dataset.v })));
+    $$("#ext button").forEach((b) => b.addEventListener("click", () => {
+      if (b.dataset.v === "view") setParams({ ea: "view" });
+      else if (aoiBox()) setParams({ ea: "box" });
+      else startDraw();
+    }));
+    $("#eRes").addEventListener("change", () => setParams({ er: $("#eRes").value }));
+    $("#ePlace").addEventListener("input", renderExport);
+    $("#eTitle").addEventListener("input", renderExport);
+    $("#eWidth").addEventListener("change", renderExport);
+    $("#eShow").addEventListener("change", renderExport);
+    $("#pv").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-pv]");
+      if (b) { if (b.dataset.pv === "signin") openSignIn(); else runPreview(); return; }
+      const img = e.target.closest("img[data-full]");
+      if (img) showLightbox(img.dataset.full);
+    });
+    $("#lightbox").addEventListener("click", () => { $("#lightbox").hidden = true; });
+    $("#signinGo").addEventListener("click", startSignIn);
+    $("#signinLater").addEventListener("click", () => { $("#signin").hidden = true; });
+    $("#exportBtn").addEventListener("click", doExport);
+    $("#pickDir").addEventListener("click", pickDir);
+    $("#resetDir").addEventListener("click", async () => { try { S.cfg = await call("save_settings", { export_dir: "" }); renderExport(); } catch (e) { toast(errText(e), true); } });
+    $("#openDir").addEventListener("click", async () => { try { await call("open_folder"); } catch (e) { toast(errText(e), true); } });
+    $("#refreshRecent").addEventListener("click", renderHistory);
+    setupPlaceSearch();
+    $("#examples").innerHTML = S.examples.map((x, i) => `<button class="chip" data-i="${i}">${esc(x.name.split(",")[0])}</button>`).join("");
+    $$("#examples .chip").forEach((b) => b.addEventListener("click", () => {
+      const x = S.examples[Number(b.dataset.i)];
+      $("#ePlace").value = x.name.split(",")[0];
+      S.active = "b";
+      setParams({ ly: x.ly, dm: x.dm, win: x.win, dt: x.dt, dtb: x.dtb, s: x.s, e: x.e, cmp: "1", lng: String(x.lng), lat: String(x.lat), z: String(x.z) });
+    }));
+    const knob = $("#knob");
+    knob.addEventListener("pointerdown", (e) => { knob.setPointerCapture(e.pointerId); knob._drag = true; });
+    knob.addEventListener("pointermove", (e) => {
+      if (!knob._drag) return;
+      const r = $("#mapwrap").getBoundingClientRect();
+      S.swipeX = clamp((e.clientX - r.left) / r.width, 0.03, 0.97);
+      positionSwipe();
+    });
+    knob.addEventListener("pointerup", () => { knob._drag = false; });
+    new MutationObserver(() => {
+      for (const m of [S.mapA, S.mapB]) {
+        if (!m || !m._ready) continue;
+        m.setPaintProperty("bg", "background-color", css("--map-bg"));
+        m.setPaintProperty("fp", "line-color", css("--fp"));
+      }
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-fused-theme-name", "style"] });
+  }
+
+  function toggleCompare(on) {
+    const upd = { cmp: on ? "1" : "" };
+    if (on) {
+      const a = param("dt");
+      if (!isDay(param("dtb")) && isDay(a)) {
+        upd.dtb = a;
+        const earlier = visibleDates().filter((d) => d.date < addDays(a, -25) && (S.cover.get(d.date) || 0) >= 0.9 && (d.cloud == null || d.cloud <= 30)).pop();
+        if (earlier) upd.dt = earlier.date;
+      }
+      S.active = "a";
+      S.pick = "a";
+    } else {
+      S.pick = null;
+    }
+    setParams(upd);
+  }
+
+  function setupPlaceSearch() {
+    const q = $("#q"), box = $("#qres");
+    let t = 0, seq = 0, items = [], sel = -1;
+    const show = () => {
+      box.hidden = !items.length;
+      box.innerHTML = items.map((it, i) => `<button data-i="${i}" class="${i === sel ? "on" : ""}"><div class="n">${esc(it.name)}</div><div class="d">${esc(it.desc)}</div></button>`).join("");
+      $$("button", box).forEach((b) => b.addEventListener("mousedown", (e) => { e.preventDefault(); go(items[Number(b.dataset.i)]); }));
+    };
+    const go = (it) => {
+      if (!it) return;
+      items = []; show();
+      q.value = it.name;
+      $("#ePlace").value = it.name;
+      if (it.bbox) S.mapA.fitBounds([[it.bbox[0], it.bbox[1]], [it.bbox[2], it.bbox[3]]], { padding: 40, maxZoom: 13, duration: 600 });
+      else S.mapA.flyTo({ center: [it.lng, it.lat], zoom: 12, duration: 600 });
+      renderExport();
+    };
+    q.addEventListener("input", () => {
+      clearTimeout(t);
+      const text = q.value.trim();
+      const ll = text.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+      if (ll) {
+        const lat = Number(ll[1]), lng = Number(ll[2]);
+        items = Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? [{ name: `${lat}, ${lng}`, desc: "Latitude, longitude", lat, lng }] : [];
+        sel = 0; show();
+        return;
+      }
+      if (text.length < 3) { items = []; show(); return; }
+      t = setTimeout(async () => {
+        const my = ++seq;
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&accept-language=en&q=${encodeURIComponent(text)}`);
+          const js = await r.json();
+          if (my !== seq) return;
+          items = js.map((x) => ({ name: x.name || x.display_name.split(",")[0], desc: x.display_name, lat: Number(x.lat), lng: Number(x.lon),
+            bbox: x.boundingbox ? [Number(x.boundingbox[2]), Number(x.boundingbox[0]), Number(x.boundingbox[3]), Number(x.boundingbox[1])] : null }));
+          sel = items.length ? 0 : -1;
+          show();
+        } catch (e) { if (my === seq) { items = []; show(); } }
+      }, 350);
+    });
+    q.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(items.length - 1, sel + 1); show(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(0, sel - 1); show(); }
+      else if (e.key === "Enter") { e.preventDefault(); go(items[Math.max(0, sel)]); }
+      else if (e.key === "Escape") { items = []; show(); }
+    });
+    q.addEventListener("blur", () => setTimeout(() => { items = []; show(); }, 150));
+  }
+
+  let accountT = 0, signinAsked = false;
+  async function refreshAccount(force) {
+    if (!force && Date.now() - accountT < 4000) return;
+    accountT = Date.now();
+    try {
+      S.who = await call("account", { refresh: !!force });
+    } catch (e) {
+      S.who = { logged_in: false, error: errText(e) };
+    }
+    const w = S.who;
+    renderAcct();
+    if (w.logged_in) $("#signin").hidden = true;
+    else if (!signinAsked && S.engine !== "local") {
+      signinAsked = true;
+      openSignIn();
+    }
+    renderExport();
+  }
+  const needsSignIn = () => S.engine !== "local" && S.who && !S.who.logged_in;
+  function renderAcct() {
+    const w = S.who;
+    if (!w) return;
+    const local = S.engine === "local";
+    const who = w.logged_in ? `Fused: ${w.email || w.handle}` : "Not signed in to Fused";
+    $(".dot", $("#acct")).className = "dot" + (w.logged_in ? " ok" : local ? "" : " warn");
+    $("span", $("#acct")).textContent = w.logged_in ? (w.handle || w.email || "?").slice(0, 1) : local ? "·" : "!";
+    $("#acct").title = local ? `${who}. Fused sign-in is not needed on this Mac.` : w.logged_in ? who : `${who}. Click to sign in.`;
+  }
+
+  function renderEngine() {
+    press("#engine", S.engine);
+  }
+  function refreshImagery() {
+    S.tileErrors = 0;
+    for (const m of [S.mapA, S.mapB]) if (m) m._s2url = null;
+    [S.mapA, S.mapB].forEach(updateMap);
+  }
+  let engineSave = Promise.resolve(), engineSeq = 0;
+  async function setEngine(v) {
+    if (v === S.engine || $("#engine").hasAttribute("aria-busy") || !S.engineKnown) return;
+    if (v === "local" && !(S.cfg && S.cfg.local && S.cfg.local.deps_ok)) {
+      $("#engine").setAttribute("aria-busy", "true");
+      try {
+        const chk = await call("engine_check");
+        if (!chk.deps_ok) {
+          toast("Open the app again so it installs the local tools", true);
+          return;
+        }
+      } catch (e) {
+        toast(errText(e), true);
+        return;
+      } finally {
+        $("#engine").removeAttribute("aria-busy");
+      }
+    }
+    const prev = S.engine, my = ++engineSeq;
+    useEngine(v);
+    toast(v === "local" ? "Sat Desk makes the images on this Mac" : "Sat Desk makes the images on Fused");
+    if (needsSignIn()) openSignIn();
+    engineSave = engineSave.then(() => call("save_settings", { engine: v })).then((cfg) => { S.cfg = cfg; }, (e) => {
+      const saved = S.cfg ? S.cfg.settings.engine : prev;
+      if (my === engineSeq && S.engine !== saved) useEngine(saved);
+      toast(errText(e), true);
+    });
+  }
+  function useEngine(v) {
+    S.engine = v;
+    if (v === "local") $("#signin").hidden = true;
+    refreshImagery();
+    renderExport();
+    renderLegend();
+    renderAcct();
+    renderEngine();
+  }
+  function openSignIn() {
+    $("#signinNote").textContent = "";
+    $("#signinGo").disabled = false;
+    $("#signinGo").textContent = "Sign in to Fused";
+    $("#signin").hidden = false;
+  }
+  async function signinStatus() {
+    const r = await fetch("/api/canvases/status", { cache: "no-store" });
+    if (!r.ok) throw new Error(`status ${r.status}`);
+    return r.json();
+  }
+  async function startSignIn() {
+    const go = $("#signinGo"), note = $("#signinNote");
+    if (fused.device && fused.device !== "desktop") { note.textContent = "Sign in on the computer that runs Sat Desk."; return; }
+    go.disabled = true;
+    go.textContent = "Waiting for the sign-in…";
+    try {
+      const before = await signinStatus();
+      const r = await fetch("/api/canvases/login", { method: "POST", headers: { "X-Fused": "1", "Content-Type": "application/json" }, body: "{}" });
+      if (!r.ok) throw new Error(`login ${r.status}`);
+      note.textContent = "Finish the sign-in in your browser.";
+      const t0 = Date.now();
+      while (Date.now() - t0 < 600000) {
+        await sleep(1500);
+        const st = await signinStatus();
+        if (st.logged_in && st.creds_stamp !== before.creds_stamp) {
+          await refreshAccount(true);
+          $("#signin").hidden = true;
+          toast(S.who && S.who.logged_in ? `Signed in to Fused as ${S.who.email || S.who.handle}` : "Signed in to Fused");
+          return;
+        }
+        if (!st.login_in_flight) throw new Error("stopped");
+      }
+      throw new Error("timeout");
+    } catch (e) {
+      console.warn("[sat desk] sign-in", e);
+      note.textContent = "The sign-in did not finish. Try again.";
+      go.disabled = false;
+      go.textContent = "Sign in to Fused";
+    }
+  }
+  async function pickDir() {
+    try {
+      const r = await call("pick_folder");
+      if (r.ok) { S.cfg = r.config; renderExport(); }
+      else if (r.error) toast(r.error, true);
+    } catch (e) { toast(errText(e), true); }
+  }
+
+  async function runJob(spec, onStep) {
+    await engineSave;
+    const { id } = await call("export_start", { spec });
+    for (;;) {
+      await sleep(1000);
+      const st = await call("export_status", { id });
+      onStep(st);
+      if (st.state === "done") return st;
+      if (st.state === "error") {
+        const err = new Error(st.error || "The export failed.");
+        err.detail = st.detail;
+        throw err;
+      }
+    }
+  }
+  async function doExport() {
+    if (needsSignIn()) { openSignIn(); return; }
+    const spec = exportSpec(false);
+    if (!spec) return;
+    S.exporting = true;
+    const btn = $("#exportBtn");
+    btn.disabled = true;
+    $("#eErr").hidden = true;
+    $("#eResult").innerHTML = "";
+    $("#eProgress").hidden = false;
+    let job = null;
+    try { job = fused.trackJob({ title: "Sat Desk export", kind: "task" }); } catch (e) { job = null; }
+    const t0 = Date.now();
+    let stepText = "Starting";
+    const tick = () => { btn.textContent = `Exporting · ${Math.round((Date.now() - t0) / 1000)} s`; $("#eNote").textContent = stepText; };
+    const timer = setInterval(tick, 500);
+    tick();
+    try {
+      const st = await runJob(spec, (x) => {
+        stepText = x.step || stepText;
+        if (job) job.update({ done: x.done, total: x.total, detail: x.step });
+      });
+      $("#eResult").innerHTML = `<div class="result">${st.result.files.map((f) => fileRow(f, st.result)).join("")}</div>`;
+      bindFileButtons($("#eResult"));
+      if (job) job.finish("Saved " + st.result.files.map((f) => f.name).join(", "));
+      if (param("tab") === "history") renderHistory();
+    } catch (e) {
+      const msg = e && e.detail ? e.message : errText(e);
+      $("#eErr").textContent = msg;
+      $("#eErr").hidden = false;
+      if (e && e.detail) console.warn("[sat desk] export detail\n" + e.detail);
+      if (job) job.fail(msg);
+    } finally {
+      clearInterval(timer);
+      $("#eProgress").hidden = true;
+      S.exporting = false;
+      renderExport();
+    }
+  }
+  function fileRow(f, h) {
+    const img = f.preview ? `<img alt="" src="${fused.rawUrl(f.preview)}" />` : `<div class="ph"></div>`;
+    return `<div class="file">${img}<div style="min-width: 0">
+      <div class="fn" title="${esc(f.path)}">${esc(f.name)}</div>
+      <div class="fm">${esc(f.label)} · ${fmtBytes(f.bytes)}${h && h.engine ? " · " + (h.engine === "local" ? "This Mac" : "Fused") : ""}${h && h.at ? " · " + ago(h.at) : ""}</div>
+      <div class="fa"><button class="tb-btn" data-act="open" data-path="${esc(f.path)}">Open</button><button class="tb-btn" data-act="reveal" data-path="${esc(f.path)}">Show</button>${h && h.caption ? `<button class="tb-btn" data-act="caption" data-cap="${esc(h.caption)}">Copy caption</button>` : ""}</div>
+    </div></div>`;
+  }
+  function bindFileButtons(root) {
+    $$("button[data-act]", root).forEach((b) => b.addEventListener("click", async () => {
+      if (b.dataset.act === "caption") {
+        navigator.clipboard.writeText(b.dataset.cap).then(() => toast("Caption copied")).catch(() => toast("Copy did not work", true));
+        return;
+      }
+      try { await call(b.dataset.act === "open" ? "open_file" : "reveal", { path: b.dataset.path }); } catch (e) { toast(errText(e), true); }
+    }));
+  }
+  async function renderHistory() {
+    try {
+      const r = await call("exports", { limit: 40 });
+      const rows = r.items.flatMap((h) => h.files.map((f) => fileRow(f, h)));
+      $("#recent").innerHTML = rows.length ? rows.join("") : `<div class="empty">No exports yet.</div>`;
+      bindFileButtons($("#recent"));
+    } catch (e) { $("#recent").innerHTML = `<div class="err">${esc(errText(e))}</div>`; }
+  }
+
+  async function boot() {
+    ensureWorker().catch(() => {});
+    const cfgP = call("config").catch((e) => e);
+    const assetsP = Promise.all([loadAsset("vendor/maplibre-gl.css", "css"), loadAsset("vendor/maplibre-gl.js", "js")]);
+    const lf = JSON.parse(await fused.readFile("layers.json"));
+    S.layers = lf.layers;
+    S.examples = lf.examples;
+    S.byId = Object.fromEntries(S.layers.map((l) => [l.id, l]));
+    maybeSearch(true);
+    await assetsP;
+    installTileProtocol();
+    wireUI();
+    $$("#engine button").forEach((b) => b.addEventListener("click", () => setEngine(b.dataset.v)));
+    renderAll();
+    S.mapA = makeMap($("#mapA"), "a");
+    S.mapA.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    S.mapA.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+    S.mapA.on("move", onMoveA);
+    S.mapA.on("moveend", onMoveEnd);
+    S.mapA.once("load", () => setTimeout(ensureMapB, 600));
+    P.onChange(scheduleApply);
+    if (compareOn()) setCompare(true);
+    const cfg = await cfgP;
+    if (cfg instanceof Error) toast("The Python worker did not start: " + errText(cfg), true);
+    else {
+      S.cfg = cfg;
+      if ((cfg.settings.engine || cfg.engine) === "local") {
+        const lc = cfg.local || {};
+        if (!lc.deps_ok) toast("Open the app again so it installs the local tools", true);
+        else S.engine = "local";
+      }
+    }
+    S.engineKnown = true;
+    renderEngine();
+    [S.mapA, S.mapB].forEach(updateMap);
+    renderLegend();
+    if (S.cfg) renderExport();
+    refreshAccount(true);
+    lastTab = param("tab");
+    if (lastTab === "history") renderHistory();
+  }
+
+  boot().catch((e) => { console.error(e); toast("Sat Desk did not start: " + errText(e), true); });
+})();
+</script>
+</body>
+</html>

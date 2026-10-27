@@ -1,0 +1,29 @@
+[project]
+name = "sat-desk"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fused>=2.9.1",
+    "numpy",
+    "pandas",
+    "geopandas",
+    "shapely",
+    "pyproj",
+    "odc-geo",
+    "rasterio",
+    "matplotlib",
+    "pillow",
+    "requests",
+    "duckdb>=1.4",
+    "odc-stac",
+    "pystac",
+    "mercantile",
+    "rio-tiler",
+]
+
+[tool.uv]
+package = false
+
+[tool.fused-render.app]
+main = "worker.py"
+idle_timeout_s = 1800
