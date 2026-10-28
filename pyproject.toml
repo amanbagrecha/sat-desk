@@ -10,7 +10,7 @@ dependencies = [
     "shapely",
     "pyproj",
     "odc-geo",
-    "rasterio<1.5.2",
+    "rasterio",
     "matplotlib",
     "pillow",
     "requests",
@@ -23,6 +23,13 @@ dependencies = [
 
 [tool.uv]
 package = false
+required-version = ">=0.12.17"
+no-build = true
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64' and platform_release == '23.0.0'",
+    "sys_platform == 'darwin' and platform_machine == 'x86_64' and platform_release == '24.0.0'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
 
 [tool.fused-render.app]
 main = "worker.py"
