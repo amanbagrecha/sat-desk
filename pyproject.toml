@@ -10,7 +10,7 @@ dependencies = [
     "shapely",
     "pyproj",
     "odc-geo",
-    "rasterio",
+    "rasterio<1.5.2",
     "matplotlib",
     "pillow",
     "requests",

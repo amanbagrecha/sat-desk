@@ -6,8 +6,8 @@ approve: []
 # Sat Desk
 
 Search runs on this Mac (Earth Search). Exports send `process_request` jobs of `sentinel_utils` to the engine in the
-`engine` setting: `"remote"` (default) runs them on Fused with the signed-in Fused account, `"local"` runs them on
-this Mac with `fused.run(..., engine="local")` and needs no Fused sign-in. The app writes only the result. Settings are in
+`engine` setting: `"local"` (default) runs them on this Mac with `fused.run(..., engine="local")` and needs no Fused
+sign-in, `"remote"` runs them on Fused with the signed-in Fused account. The app writes only the result. Settings are in
 `.fused/data/settings.json`, exports go to `.fused/data/exports/` (or the folder in the settings), and caches are
 in `.fused/cache/v1/`.
 

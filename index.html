@@ -278,8 +278,8 @@
       </svg>
       <div class="bt"><b>Sat Desk</b></div>
       <div class="seg" id="engine" role="group" aria-label="Where to make the images">
-        <button data-v="remote" title="Make the images on Fused">Fused</button>
         <button data-v="local" title="Make the images on this Mac">This Mac</button>
+        <button data-v="remote" title="Make the images on Fused">Fused</button>
       </div>
       <button class="acct" id="acct" title="Fused account"><span>·</span><i class="dot"></i></button>
     </header>
@@ -507,7 +507,7 @@
   }
 
   const S = {
-    cfg: null, layers: [], byId: {}, examples: [], who: null, engine: "remote", engineKnown: false,
+    cfg: null, layers: [], byId: {}, examples: [], who: null, engine: "local", engineKnown: false,
     mapA: null, mapB: null, syncing: false, swipeX: 0.5, active: "a", pick: null,
     search: null, searchSeq: 0, searchT: 0, searchKey: "", allDates: [], cover: new Map(), sceneCover: new Map(),
     drawing: false, drawStart: null, drawBox: null, autoPlace: "", tileErrors: 0, exporting: false,
@@ -2020,11 +2020,8 @@
     if (cfg instanceof Error) toast("The Python worker did not start: " + errText(cfg), true);
     else {
       S.cfg = cfg;
-      if ((cfg.settings.engine || cfg.engine) === "local") {
-        const lc = cfg.local || {};
-        if (!lc.deps_ok) toast("Open the app again so it installs the local tools", true);
-        else S.engine = "local";
-      }
+      S.engine = (cfg.settings.engine || cfg.engine) === "remote" ? "remote" : "local";
+      if (S.engine === "local" && !(cfg.local || {}).deps_ok) toast("Open the app again so it installs the local tools", true);
     }
     S.engineKnown = true;
     renderEngine();

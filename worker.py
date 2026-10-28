@@ -309,12 +309,12 @@ OPS = {"ping": ping, "config": config, "account": account, "save_settings": save
 
 
 def _settings():
-    s = {"package": DEFAULT_PACKAGE, "export_dir": "", "engine": "remote"}
+    s = {"package": DEFAULT_PACKAGE, "export_dir": "", "engine": "local"}
     s.update({k: v for k, v in _read_json(SETTINGS_PATH, {}).items() if k in s and isinstance(v, str) and v})
     if not s["package"].startswith("https://") and not os.path.isdir(os.path.expanduser(s["package"])):
         s["package"] = DEFAULT_PACKAGE
     if s["engine"] not in ENGINES:
-        s["engine"] = "remote"
+        s["engine"] = "local"
     return s
 
 

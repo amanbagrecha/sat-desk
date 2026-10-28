@@ -5,12 +5,14 @@ heavy work. The app gets back only the result.
 
 ## Before you open it
 
-- **fused-render** on a Mac. The folder picker and "Show in Finder" use macOS; the rest also works on Linux.
+- **fused-render** on a Mac with macOS 14 or later (Apple Silicon), or macOS 15 or later (Intel). The Python packages
+  install from ready-made files only for these versions. The folder picker and "Show in Finder" use macOS; the rest
+  also works on Linux.
 - **An internet connection.** The map, the date search and the satellite data all come from the internet.
 - **First open:** fused-render installs the Python packages in `pyproject.toml` (with odc-stac and rio-tiler). This
   takes a few minutes one time.
-- **A Fused account** only for the Fused engine (the default). The app asks you to sign in when it opens. Select
-  "This Mac" at the top if you have no account: then your Mac makes the images, and the app needs no sign-in.
+- **No Fused account by default.** The app opens with "This Mac": your Mac makes the images, and the app needs no
+  sign-in. Select "Fused" at the top to make the images on Fused; then the app asks you to sign in.
 - **Your own data stays on your machine:** settings, export history and caches are in `.fused/`. Exports go to
   `.fused/data/exports/` until you choose a folder in Export. Do not copy `.fused/` or `.venv/` when you share the
   folder.
@@ -64,8 +66,8 @@ app fills the gap with the median of all pixels.
 ## Engine
 
 Sat Desk has two engines. Both use the same `sentinel_utils` code and the same requests. Only the engine changes:
-`fused.run(su, request=..., engine="remote")` or `engine="local"`. Set it with the `engine` setting (`"remote"` or
-`"local"`).
+`fused.run(su, request=..., engine="remote")` or `engine="local"`. Set it with the `engine` setting (`"local"`, the
+default, or `"remote"`).
 
 | | Fused (`remote`) | This Mac (`local`) |
 |---|---|---|
@@ -95,8 +97,8 @@ What the local engine uses:
   ranges of a file one after the other (`GDAL_HTTP_MULTIRANGE=SERIAL`), so tiles that load at the same time share the
   data that they download. Exports read the full 10 m data, without these two settings.
 
-First-time setup for "This Mac": open the app one time so that fused-render installs the packages, then select This
-Mac.
+First-time setup for "This Mac": open the app one time so that fused-render installs the packages. This Mac is the
+default engine.
 
 Typical times (Los Angeles area, home connection): one new map tile 3 to 5 s, a full view of new tiles about
 10 to 17 s. A one-date PNG export of a 32 x 28 km area about 12 s, a before and
